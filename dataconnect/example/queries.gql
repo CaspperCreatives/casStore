@@ -1,0 +1,31 @@
+mutation CreateUser($email: String!, $passwordHash: String!) @auth(level: PUBLIC, insecureReason: "New users must be able to sign up for the service.") {
+  user_insert(data: {email: $email, passwordHash: $passwordHash, createdAt_expr: "request.time", id_expr: "uuidV4()" })
+}
+
+query GetProducts @auth(level: PUBLIC, insecureReason: "Products are safe to display to the public") {
+  products {
+    id
+    name
+    description
+    imageUrl
+    price
+  }
+}
+
+mutation AddToCart($productId: UUID!, $quantity: Int!) @auth(level: USER, insecureReason: "Users must be able to add items to their carts") {
+  cartItem_insert(data: {productId: $productId, quantity: $quantity, userId_expr: "auth.uid", id_expr: "uuidV4()"})
+}
+
+query GetCart @auth(level: USER) {
+  cartItems(where: {userId: {eq_expr: "auth.uid"}}) {
+    id
+    product {
+      id
+      name
+      description
+      price
+      imageUrl
+    }
+    quantity
+  }
+}

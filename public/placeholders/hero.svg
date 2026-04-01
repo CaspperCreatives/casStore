@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2000" height="900" viewBox="0 0 2000 900">
+  <defs>
+    <linearGradient id="g1" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#0b1220"/>
+      <stop offset="0.45" stop-color="#1f2937"/>
+      <stop offset="1" stop-color="#0f172a"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="45%" cy="35%" r="70%">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.14"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="2000" height="900" fill="url(#g1)"/>
+  <rect width="2000" height="900" fill="url(#glow)"/>
+  <g opacity="0.18" fill="#94a3b8">
+    <circle cx="1480" cy="500" r="180"/>
+    <circle cx="1650" cy="560" r="120"/>
+    <circle cx="1320" cy="590" r="110"/>
+    <rect x="1180" y="260" width="260" height="430" rx="120"/>
+  </g>
+  <text x="260" y="430" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial" font-size="56" fill="#e5e7eb" letter-spacing="14">
+    ORIGINAL NORDIC DESIGN
+  </text>
+  <text x="262" y="510" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial" font-size="20" fill="#94a3b8" letter-spacing="3">
+    Hero placeholder (replace with your own banner image anytime)
+  </text>
+</svg>
+
+

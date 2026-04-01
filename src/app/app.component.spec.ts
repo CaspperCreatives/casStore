@@ -24,6 +24,7 @@ describe('AppComponent', () => {
     const fixture = TestBed.createComponent(AppComponent);
     fixture.detectChanges();
     const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('h1')?.textContent).toContain('Hello, casStore');
+    // AppComponent is intentionally just a router host; title is rendered by routed pages / shell.
+    expect(compiled.querySelector('router-outlet')).toBeTruthy();
   });
 });
