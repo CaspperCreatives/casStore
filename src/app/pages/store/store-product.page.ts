@@ -1,6 +1,6 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { StoreService } from '../../core/store.service';
+import { Store, StoreService } from '../../core/store.service';
 import { StoreProduct, StoreProductsService } from '../../core/store-products.service';
 import { StoreOrdersService } from '../../core/store-orders.service';
 import { AuthService } from '../../core/auth.service';
@@ -64,8 +64,8 @@ import { LucideAngularModule, Minus, Package, Plus, ShoppingCart } from 'lucide-
             }
 
             <!-- Quantity + Add to cart -->
-            <div class="mt-8 flex items-center gap-4">
-              <div class="flex items-center rounded-2xl border border-slate-200 bg-slate-50">
+            <div class="mt-8 flex items-center gap-4 flex-col md:flex-row">
+              <div class="flex items-center rounded-2xl border border-slate-200 bg-slate-50 w-full md:w-auto justify-evenly items-center">
                 <button type="button" class="flex h-10 w-10 items-center justify-center rounded-l-2xl hover:bg-slate-100"
                   (click)="qty.set(Math.max(1, qty() - 1))">
                   <lucide-angular [img]="MinusIcon" class="h-4 w-4 text-slate-600" />
@@ -79,7 +79,7 @@ import { LucideAngularModule, Minus, Package, Plus, ShoppingCart } from 'lucide-
 
               <button
                 type="button"
-                class="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-slate-900 px-6 py-3 text-sm font-bold text-white hover:bg-slate-800 disabled:opacity-50 transition-colors"
+                class="w-full md:w-auto flex flex-1 items-center justify-center gap-2 rounded-2xl bg-slate-900 px-6 py-3 text-sm font-bold text-white hover:bg-slate-800 disabled:opacity-50 transition-colors"
                 [disabled]="addingToCart() || product()!.stock <= 0"
                 (click)="addToCart()"
               >
@@ -123,6 +123,7 @@ export class StoreProductPage {
   private auth = inject(AuthService);
 
   storeSlug = signal('');
+  productId = signal('');
   product = signal<StoreProduct | null>(null);
   loading = signal(true);
   qty = signal(1);
@@ -130,23 +131,37 @@ export class StoreProductPage {
   cartMessage = signal<string | null>(null);
   cartError = signal<string | null>(null);
 
+  private activeStore = computed<Store | null>(() =>
+    this.storeService.viewingStore() ?? this.storeService.store()
+  );
+  private loadedKey: string | null = null;
+
   constructor() {
     const slug = this.route.parent?.snapshot.paramMap.get('storeSlug') ?? '';
     const productId = this.route.snapshot.paramMap.get('productId') ?? '';
     this.storeSlug.set(slug);
-    void this.load(productId);
+    this.productId.set(productId);
+
+    effect(() => {
+      const store = this.activeStore();
+      const pid = this.productId();
+      if (!store || !pid) return;
+      const key = `${store.id}:${pid}`;
+      if (this.loadedKey === key) return;
+      this.loadedKey = key;
+      void this.load(store.id, pid);
+    });
   }
 
-  private async load(productId: string) {
-    const store = this.storeService.store();
-    if (!store || !productId) { this.loading.set(false); return; }
-    const p = await this.productsService.getProduct(store.id, productId);
+  private async load(storeId: string, productId: string) {
+    this.loading.set(true);
+    const p = await this.productsService.getProduct(storeId, productId);
     this.product.set(p);
     this.loading.set(false);
   }
 
   async addToCart() {
-    const store = this.storeService.store();
+    const store = this.activeStore();
     const p = this.product();
     if (!store || !p) return;
     if (!this.auth.user()) {

@@ -2,6 +2,9 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { ApiClient } from './api-client';
 import { AuthService } from './auth.service';
 
+export type HeroHeightMode = 'sm' | 'md' | 'lg' | 'full' | 'custom';
+export type HeroVerticalAlignment = 'top' | 'center' | 'bottom';
+
 export type HeroConfig = {
   title: string;
   subtitle: string;
@@ -10,8 +13,12 @@ export type HeroConfig = {
   ctaUrl: string;
   backgroundImageUrl: string;
   backgroundOverlay: number;
-  alignment: 'left' | 'center';
-  height: 'sm' | 'md' | 'lg';
+  alignment: 'left' | 'center' | 'right';
+  verticalAlignment: HeroVerticalAlignment;
+  /** Presets (sm/md/lg), 'full' = 100vh, 'custom' = use heightVh */
+  height: HeroHeightMode;
+  /** Viewport-height percentage (10-100). Only applied when height === 'custom'. */
+  heightVh: number;
 };
 
 export type BannerConfig = {
@@ -80,7 +87,10 @@ export type HeroSliderConfig = {
   slides: HeroSlide[];
   autoPlay: boolean;
   intervalMs: number;
-  height: 'sm' | 'md' | 'lg';
+  height: HeroHeightMode;
+  /** Viewport-height percentage (10-100). Only applied when height === 'custom'. */
+  heightVh: number;
+  verticalAlignment: HeroVerticalAlignment;
 };
 
 export type LogoItem = { label: string; imageUrl: string; linkUrl: string };
@@ -89,6 +99,12 @@ export type LogosConfig = {
   subtitle: string;
   items: LogoItem[];
   style: 'muted' | 'full';
+  /** Logo image size in px (height). Defaults to 32. */
+  logoSize?: number;
+  /** Label font size in px. Defaults to 11. */
+  labelSize?: number;
+  /** Direction between logo image and label. Defaults to 'horizontal'. */
+  itemLayout?: 'horizontal' | 'vertical';
 };
 
 export type PromoCard = { label: string; title: string; description: string; ctaUrl: string; icon: string };
@@ -144,6 +160,14 @@ export type StoreSection =
   | { id: string; type: 'valueProps';       visible: boolean; config: ValuePropsConfig }
   | { id: string; type: 'richText';         visible: boolean; config: RichTextConfig };
 
+export type NavPlacement = 'header' | 'footer' | 'both';
+export type NavItem =
+  | { id: string; kind: 'page';    label: string; pageSlug: string; placement?: NavPlacement }
+  | { id: string; kind: 'url';     label: string; url: string; newTab: boolean; placement?: NavPlacement }
+  | { id: string; kind: 'builtin'; label: string; target: 'products' | 'cart' | 'account'; placement?: NavPlacement };
+
+export type StoreHomeTarget = 'custom' | 'products';
+
 export type Store = {
   id: string;
   ownerId: string;
@@ -154,7 +178,15 @@ export type Store = {
   logoUrl: string | null;
   themeColor: string;
   active: boolean;
+  /**
+   * Controls what renders at the storefront root.
+   * - 'custom' (default): the custom page marked `isHome: true`.
+   * - 'products': redirect to the products listing page.
+   */
+  homeTarget?: StoreHomeTarget;
+  /** @deprecated Sections now live on per-page docs. Kept for legacy fallback. */
   sections?: StoreSection[];
+  navItems?: NavItem[];
 };
 
 /** Fallback sections derived from store profile, used when a store has no sections defined. */
@@ -173,7 +205,9 @@ export function buildDefaultSections(store: { name: string; description: string 
         backgroundImageUrl: '',
         backgroundOverlay: 40,
         alignment: 'center',
-        height: 'md'
+        verticalAlignment: 'center',
+        height: 'md',
+        heightVh: 60
       }
     },
     {
@@ -250,6 +284,16 @@ export class StoreService {
     const curr = this.store();
     if (curr) this.store.set({ ...curr, sections: res.sections });
     return res.sections;
+  }
+
+  /** Replace the ordered nav items array on the owner's store. */
+  async updateNav(navItems: NavItem[]): Promise<NavItem[]> {
+    const res = await this.api.patch<{ ok: true; navItems: NavItem[] }>('storeUpdateNav', { navItems }, { auth: true });
+    const curr = this.store();
+    if (curr) this.store.set({ ...curr, navItems: res.navItems });
+    const view = this.viewingStore();
+    if (view) this.viewingStore.set({ ...view, navItems: res.navItems });
+    return res.navItems;
   }
 
   async postAuthDestination(canAccessAdmin: boolean): Promise<string> {

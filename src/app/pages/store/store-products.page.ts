@@ -1,6 +1,6 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { StoreService } from '../../core/store.service';
+import { Store, StoreService } from '../../core/store.service';
 import { StoreProduct, StoreProductsService } from '../../core/store-products.service';
 import { StoreOrdersService } from '../../core/store-orders.service';
 import { AuthService } from '../../core/auth.service';
@@ -96,22 +96,32 @@ export class StoreProductsPage {
   loading = signal(true);
   cartMessage = signal<string | null>(null);
 
+  private activeStore = computed<Store | null>(() =>
+    this.storeService.viewingStore() ?? this.storeService.store()
+  );
+  private loadedStoreId: string | null = null;
+
   constructor() {
     const slug = this.route.parent?.snapshot.paramMap.get('storeSlug') ?? '';
     this.storeSlug.set(slug);
-    void this.load();
+
+    effect(() => {
+      const store = this.activeStore();
+      if (!store || this.loadedStoreId === store.id) return;
+      this.loadedStoreId = store.id;
+      void this.load(store.id);
+    });
   }
 
-  private async load() {
-    const store = this.storeService.store();
-    if (!store) { this.loading.set(false); return; }
-    const prods = await this.productsService.loadPublicProducts(store.id);
+  private async load(storeId: string) {
+    this.loading.set(true);
+    const prods = await this.productsService.loadPublicProducts(storeId);
     this.products.set(prods);
     this.loading.set(false);
   }
 
   async addToCart(p: StoreProduct) {
-    const store = this.storeService.store();
+    const store = this.activeStore();
     if (!store || !this.auth.user()) {
       this.showMsg('Please sign in to add items to cart');
       return;

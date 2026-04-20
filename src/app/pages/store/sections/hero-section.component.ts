@@ -8,10 +8,11 @@ import { HeroConfig, Store } from '../../../core/store.service';
   imports: [RouterLink],
   template: `
     <section
-      class="relative overflow-hidden"
-      [class.min-h-\\[320px\\]]="cfg().height === 'sm'"
-      [class.min-h-\\[480px\\]]="cfg().height === 'md'"
-      [class.min-h-\\[640px\\]]="cfg().height === 'lg'"
+      class="relative flex w-full overflow-hidden"
+      [class.items-start]="verticalAlign() === 'top'"
+      [class.items-center]="verticalAlign() === 'center'"
+      [class.items-end]="verticalAlign() === 'bottom'"
+      [style.min-height]="minHeightStyle()"
       [style.background-color]="store().themeColor || '#0f172a'"
     >
       @if (cfg().backgroundImageUrl) {
@@ -20,15 +21,19 @@ import { HeroConfig, Store } from '../../../core/store.service';
         <div class="absolute inset-0 bg-black" [style.opacity]="overlayOpacity()"></div>
       }
 
-      <div class="relative mx-auto flex max-w-7xl px-6 py-20 md:py-28 text-white"
+      <div class="relative z-10 mx-auto flex w-full max-w-7xl px-6 py-20 md:py-28 text-white"
+        [class.justify-start]="cfg().alignment === 'left'"
         [class.justify-center]="cfg().alignment === 'center'"
-        [class.text-center]="cfg().alignment === 'center'"
-        [class.items-center]="true"
+        [class.justify-end]="cfg().alignment === 'right'"
       >
-        <div class="max-w-2xl">
+        <div class="max-w-2xl"
+          [class.text-center]="cfg().alignment === 'center'"
+          [class.text-right]="cfg().alignment === 'right'"
+        >
           @if (store().logoUrl && !cfg().backgroundImageUrl) {
             <img [src]="store().logoUrl" alt="" class="mb-6 h-16 w-16 rounded-2xl object-cover border border-white/20"
-              [class.mx-auto]="cfg().alignment === 'center'" />
+              [class.mx-auto]="cfg().alignment === 'center'"
+              [class.ml-auto]="cfg().alignment === 'right'" />
           }
           @if (cfg().title) {
             <h1 class="text-4xl font-bold tracking-tight md:text-5xl lg:text-6xl">
@@ -62,4 +67,17 @@ export class HeroSectionComponent {
   cfg = input.required<HeroConfig>();
   store = input.required<Store>();
   overlayOpacity = computed(() => Math.min(100, Math.max(0, this.cfg().backgroundOverlay ?? 40)) / 100);
+
+  verticalAlign = computed(() => this.cfg().verticalAlignment ?? 'center');
+
+  minHeightStyle = computed(() => {
+    const h = this.cfg().height ?? 'md';
+    if (h === 'full') return '100vh';
+    if (h === 'custom') {
+      const vh = Math.min(100, Math.max(10, this.cfg().heightVh ?? 60));
+      return `${vh}vh`;
+    }
+    const preset: Record<'sm' | 'md' | 'lg', string> = { sm: '320px', md: '480px', lg: '640px' };
+    return preset[h as 'sm' | 'md' | 'lg'] ?? '480px';
+  });
 }

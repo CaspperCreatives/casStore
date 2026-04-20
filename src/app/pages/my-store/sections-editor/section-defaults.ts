@@ -16,7 +16,9 @@ export function createDefaultSection(type: SectionType): StoreSection {
           backgroundImageUrl: '',
           backgroundOverlay: 40,
           alignment: 'center',
-          height: 'md'
+          verticalAlignment: 'center',
+          height: 'md',
+          heightVh: 60
         }
       };
     case 'banner':
@@ -69,7 +71,9 @@ export function createDefaultSection(type: SectionType): StoreSection {
           ],
           autoPlay: true,
           intervalMs: 6000,
-          height: 'lg'
+          height: 'lg',
+          heightVh: 80,
+          verticalAlignment: 'center'
         }
       };
     case 'logos':
@@ -84,7 +88,10 @@ export function createDefaultSection(type: SectionType): StoreSection {
             { label: 'Product Design', imageUrl: '', linkUrl: '' },
             { label: 'Dutch Design Award', imageUrl: '', linkUrl: '' }
           ],
-          style: 'muted'
+          style: 'muted',
+          logoSize: 32,
+          labelSize: 11,
+          itemLayout: 'horizontal'
         }
       };
     case 'promoCards':

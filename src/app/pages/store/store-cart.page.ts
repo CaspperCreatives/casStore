@@ -1,7 +1,7 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth.service';
-import { StoreService } from '../../core/store.service';
+import { Store, StoreService } from '../../core/store.service';
 import { StoreOrdersService } from '../../core/store-orders.service';
 import { LucideAngularModule, Minus, Plus, Trash2 } from 'lucide-angular';
 
@@ -137,18 +137,28 @@ export class StoreCartPage {
     catch { return `$${(total / 100).toFixed(2)}`; }
   });
 
+  private activeStore = computed<Store | null>(() =>
+    this.storeService.viewingStore() ?? this.storeService.store()
+  );
+  private loadedStoreId: string | null = null;
+
   constructor() {
     const slug = this.route.parent?.snapshot.paramMap.get('storeSlug') ?? '';
     this.storeSlug.set(slug);
-    if (this.isSignedIn()) void this.loadCart();
+
+    effect(() => {
+      const store = this.activeStore();
+      if (!store || !this.isSignedIn()) return;
+      if (this.loadedStoreId === store.id) return;
+      this.loadedStoreId = store.id;
+      void this.loadCart(store.id);
+    });
   }
 
-  private async loadCart() {
-    const store = this.storeService.store();
-    if (!store) return;
+  private async loadCart(storeId: string) {
     this.loading.set(true);
     try {
-      await this.ordersService.loadCart(store.id);
+      await this.ordersService.loadCart(storeId);
     } catch (e: any) {
       this.error.set(e?.message ?? String(e));
     } finally {
@@ -157,7 +167,7 @@ export class StoreCartPage {
   }
 
   async setQty(productId: string, qty: number) {
-    const store = this.storeService.store();
+    const store = this.activeStore();
     if (!store) return;
     this.updatingId.set(productId);
     this.error.set(null);

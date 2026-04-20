@@ -58,31 +58,6 @@ import { LucideAngularModule, Save } from 'lucide-angular';
         </div>
 
         <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h2 class="font-semibold text-slate-900">Appearance</h2>
-          <div class="mt-5">
-            <label class="mb-2 block text-[12px] font-semibold uppercase tracking-wider text-slate-600">Theme colour</label>
-            <div class="flex flex-wrap gap-3">
-              @for (color of themeColors; track color.value) {
-                <button
-                  type="button"
-                  class="h-10 w-10 rounded-2xl border-2 transition-all"
-                  [style.background]="color.value"
-                  [class.border-slate-900]="themeColor === color.value"
-                  [class.border-transparent]="themeColor !== color.value"
-                  [class.scale-110]="themeColor === color.value"
-                  (click)="themeColor = color.value"
-                ></button>
-              }
-              <div class="flex items-center gap-2">
-                <input type="color" [(ngModel)]="themeColor"
-                  class="h-10 w-10 cursor-pointer rounded-2xl border border-slate-200 p-0.5" />
-                <span class="text-xs text-slate-500 font-mono">{{ themeColor }}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
           <div class="flex items-center gap-3">
             <input type="checkbox" [(ngModel)]="active" id="active" class="h-4 w-4 rounded" />
             <label for="active" class="text-sm font-semibold text-slate-700">Store is active (visible to the public)</label>
@@ -126,19 +101,7 @@ export class MyStoreSettingsPage {
   description = '';
   category = '';
   logoUrl = '';
-  themeColor = '#0f172a';
   active = true;
-
-  themeColors = [
-    { name: 'Midnight', value: '#0f172a' },
-    { name: 'Indigo', value: '#4338ca' },
-    { name: 'Violet', value: '#7c3aed' },
-    { name: 'Rose', value: '#e11d48' },
-    { name: 'Amber', value: '#d97706' },
-    { name: 'Emerald', value: '#059669' },
-    { name: 'Teal', value: '#0d9488' },
-    { name: 'Sky', value: '#0284c7' },
-  ];
 
   constructor() {
     if (this.firebaseConfigured()) void this.loadStore();
@@ -153,7 +116,6 @@ export class MyStoreSettingsPage {
       this.description = store.description;
       this.category = store.category;
       this.logoUrl = store.logoUrl ?? '';
-      this.themeColor = store.themeColor;
       this.active = store.active;
     }
     this.loading.set(false);
@@ -169,7 +131,6 @@ export class MyStoreSettingsPage {
         description: this.description.trim(),
         category: this.category,
         logoUrl: this.logoUrl.trim() || null,
-        themeColor: this.themeColor,
         active: this.active
       });
       this.saveStatus.set('success');

@@ -79,20 +79,43 @@ const LABEL_CLS =
           <div class="text-[11px] text-slate-500">{{ cfg().backgroundOverlay }}%</div>
         </div>
         <div>
-          <label class="${LABEL_CLS}">Alignment</label>
+          <label class="${LABEL_CLS}">H. align</label>
           <select [ngModel]="cfg().alignment" (ngModelChange)="patch({ alignment: $event })" class="${INPUT_CLS}">
-            <option value="center">Center</option>
             <option value="left">Left</option>
+            <option value="center">Center</option>
+            <option value="right">Right</option>
           </select>
         </div>
         <div>
-          <label class="${LABEL_CLS}">Height</label>
-          <select [ngModel]="cfg().height" (ngModelChange)="patch({ height: $event })" class="${INPUT_CLS}">
-            <option value="sm">Small</option>
-            <option value="md">Medium</option>
-            <option value="lg">Large</option>
+          <label class="${LABEL_CLS}">V. align</label>
+          <select [ngModel]="cfg().verticalAlignment" (ngModelChange)="patch({ verticalAlignment: $event })" class="${INPUT_CLS}">
+            <option value="top">Top</option>
+            <option value="center">Center</option>
+            <option value="bottom">Bottom</option>
           </select>
         </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="${LABEL_CLS}">Height</label>
+          <select [ngModel]="cfg().height" (ngModelChange)="patch({ height: $event })" class="${INPUT_CLS}">
+            <option value="sm">Small (320px)</option>
+            <option value="md">Medium (480px)</option>
+            <option value="lg">Large (640px)</option>
+            <option value="full">Full screen (100%)</option>
+            <option value="custom">Custom…</option>
+          </select>
+        </div>
+        @if (cfg().height === 'custom') {
+          <div>
+            <label class="${LABEL_CLS}">Screen coverage</label>
+            <input type="range" min="10" max="100" step="5"
+              [ngModel]="cfg().heightVh"
+              (ngModelChange)="patch({ heightVh: +$event })" class="w-full" />
+            <div class="text-[11px] text-slate-500">{{ cfg().heightVh }}% of viewport</div>
+          </div>
+        }
       </div>
     </div>
   `
@@ -480,9 +503,19 @@ export class CtaEditorComponent {
         <div>
           <label class="${LABEL_CLS}">Height</label>
           <select [ngModel]="cfg().height" (ngModelChange)="patch({ height: $event })" class="${INPUT_CLS}">
-            <option value="sm">Small</option>
-            <option value="md">Medium</option>
-            <option value="lg">Large</option>
+            <option value="sm">Small (320px)</option>
+            <option value="md">Medium (480px)</option>
+            <option value="lg">Large (640px)</option>
+            <option value="full">Full screen (100%)</option>
+            <option value="custom">Custom…</option>
+          </select>
+        </div>
+        <div>
+          <label class="${LABEL_CLS}">V. align</label>
+          <select [ngModel]="cfg().verticalAlignment" (ngModelChange)="patch({ verticalAlignment: $event })" class="${INPUT_CLS}">
+            <option value="top">Top</option>
+            <option value="center">Center</option>
+            <option value="bottom">Bottom</option>
           </select>
         </div>
         <div>
@@ -492,6 +525,18 @@ export class CtaEditorComponent {
             <option [ngValue]="false">Off</option>
           </select>
         </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3">
+        @if (cfg().height === 'custom') {
+          <div>
+            <label class="${LABEL_CLS}">Screen coverage</label>
+            <input type="range" min="10" max="100" step="5"
+              [ngModel]="cfg().heightVh"
+              (ngModelChange)="patch({ heightVh: +$event })" class="w-full" />
+            <div class="text-[11px] text-slate-500">{{ cfg().heightVh }}% of viewport</div>
+          </div>
+        }
         <div>
           <label class="${LABEL_CLS}">Interval (ms)</label>
           <input type="number" min="2000" step="500" [ngModel]="cfg().intervalMs" (ngModelChange)="patch({ intervalMs: +$event })" class="${INPUT_CLS}" />
@@ -587,6 +632,31 @@ export class HeroSliderEditorComponent {
           <option value="muted">Muted</option>
           <option value="full">Full colour</option>
         </select>
+      </div>
+
+      <div>
+        <label class="${LABEL_CLS}">Layout (logo ↔ label)</label>
+        <select [ngModel]="cfg().itemLayout ?? 'horizontal'" (ngModelChange)="patch({ itemLayout: $event })" class="${INPUT_CLS}">
+          <option value="horizontal">Horizontal (side by side)</option>
+          <option value="vertical">Vertical (stacked)</option>
+        </select>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="${LABEL_CLS}">Logo size ({{ cfg().logoSize ?? 32 }}px)</label>
+          <input type="range" min="16" max="120" step="2"
+            [ngModel]="cfg().logoSize ?? 32"
+            (ngModelChange)="patch({ logoSize: +$event })"
+            class="w-full" />
+        </div>
+        <div>
+          <label class="${LABEL_CLS}">Label size ({{ cfg().labelSize ?? 11 }}px)</label>
+          <input type="range" min="8" max="28" step="1"
+            [ngModel]="cfg().labelSize ?? 11"
+            (ngModelChange)="patch({ labelSize: +$event })"
+            class="w-full" />
+        </div>
       </div>
 
       <div class="space-y-3">

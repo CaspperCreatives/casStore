@@ -24,9 +24,12 @@ import { MyStoreDashboardPage } from './pages/my-store/my-store-dashboard.page';
 import { MyStoreProductsPage } from './pages/my-store/my-store-products.page';
 import { MyStoreOrdersPage } from './pages/my-store/my-store-orders.page';
 import { MyStoreSettingsPage } from './pages/my-store/my-store-settings.page';
-import { MyStoreStorefrontPage } from './pages/my-store/my-store-storefront.page';
+import { MyStorePagesListPage } from './pages/my-store/my-store-pages-list.page';
+import { MyStorePageEditorPage } from './pages/my-store/my-store-page-editor.page';
+import { MyStoreNavEditorPage } from './pages/my-store/my-store-nav-editor.page';
 import { StoreShellComponent } from './pages/store/store-shell.component';
 import { StoreHomePage } from './pages/store/store-home.page';
+import { StorePagePage } from './pages/store/store-page.page';
 import { StoreProductsPage } from './pages/store/store-products.page';
 import { StoreProductPage } from './pages/store/store-product.page';
 import { StoreCartPage } from './pages/store/store-cart.page';
@@ -60,7 +63,9 @@ export const routes: Routes = [
       { path: '', component: MyStoreDashboardPage },
       { path: 'products', component: MyStoreProductsPage },
       { path: 'orders', component: MyStoreOrdersPage },
-      { path: 'storefront', component: MyStoreStorefrontPage },
+      { path: 'storefront', component: MyStorePagesListPage },
+      { path: 'storefront/nav', component: MyStoreNavEditorPage },
+      { path: 'storefront/pages/:pageId', component: MyStorePageEditorPage },
       { path: 'settings', component: MyStoreSettingsPage }
     ]
   },
@@ -73,6 +78,7 @@ export const routes: Routes = [
       { path: '', component: StoreHomePage },
       { path: 'products', component: StoreProductsPage },
       { path: 'products/:productId', component: StoreProductPage },
+      { path: 'p/:pageSlug', component: StorePagePage },
       { path: 'cart', component: StoreCartPage, canActivate: [authGuard] },
       { path: 'checkout', component: StoreCheckoutPage, canActivate: [authGuard] }
     ]

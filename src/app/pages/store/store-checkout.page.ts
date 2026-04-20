@@ -1,8 +1,8 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../core/auth.service';
-import { StoreService } from '../../core/store.service';
+import { Store, StoreService } from '../../core/store.service';
 import { StoreOrdersService } from '../../core/store-orders.service';
 import { ApiClient, ApiClientError } from '../../core/api-client';
 import { LucideAngularModule } from 'lucide-angular';
@@ -166,17 +166,26 @@ export class StoreCheckoutPage {
     catch { return `$${(total / 100).toFixed(2)}`; }
   });
 
+  private activeStore = computed<Store | null>(() =>
+    this.storeService.viewingStore() ?? this.storeService.store()
+  );
+  private loadedStoreId: string | null = null;
+
   constructor() {
     const slug = this.route.parent?.snapshot.paramMap.get('storeSlug') ?? '';
     this.storeSlug.set(slug);
-    if (this.isSignedIn()) {
-      const store = this.storeService.store();
-      if (store) void this.ordersService.loadCart(store.id).catch(() => {});
-    }
+
+    effect(() => {
+      const store = this.activeStore();
+      if (!store || !this.isSignedIn()) return;
+      if (this.loadedStoreId === store.id) return;
+      this.loadedStoreId = store.id;
+      void this.ordersService.loadCart(store.id).catch(() => {});
+    });
   }
 
   async placeOrder() {
-    const store = this.storeService.store();
+    const store = this.activeStore();
     if (!store) return;
     this.status.set('loading');
     this.error.set(null);
