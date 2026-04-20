@@ -2,6 +2,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { environment } from '../../../environments/environment';
 import { AuthService } from '../../core/auth.service';
+import { StoreService } from '../../core/store.service';
 import { ArrowRight, Chrome, CircleAlert, LoaderCircle, Lock, LucideAngularModule, Mail, TriangleAlert } from 'lucide-angular';
 
 @Component({
@@ -101,9 +102,12 @@ import { ArrowRight, Chrome, CircleAlert, LoaderCircle, Lock, LucideAngularModul
           </div>
 
           <div class="mt-6">
-            <button type="button" class="flex w-full items-center justify-center gap-2.5 rounded-2xl border border-slate-200 bg-white py-2.5 text-sm font-semibold text-slate-700 transition-all hover:bg-slate-50 active:scale-95">
+            <button type="button"
+              class="flex w-full items-center justify-center gap-2.5 rounded-2xl border border-slate-200 bg-white py-2.5 text-sm font-semibold text-slate-700 transition-all hover:bg-slate-50 active:scale-95 disabled:opacity-50"
+              [disabled]="!firebaseConfigured() || status() === 'loading'"
+              (click)="signUpWithGoogle()">
               <lucide-angular [img]="ChromeIcon" class="h-5 w-5" />
-              <span>Google</span>
+              <span>Continue with Google</span>
             </button>
           </div>
         </div>
@@ -132,6 +136,7 @@ export class SignUpPage {
   readonly ChromeIcon = Chrome;
 
   private auth = inject(AuthService);
+  private store = inject(StoreService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
 
@@ -164,11 +169,34 @@ export class SignUpPage {
       if (returnUrl) {
         await this.router.navigateByUrl(returnUrl);
       } else {
-        const dest = this.auth.canAccessAdmin() ? '/admin' : '/products';
-        await this.router.navigateByUrl(dest);
+        await this.router.navigateByUrl(await this.store.postAuthDestination(this.auth.canAccessAdmin()));
       }
     } catch (e: any) {
       this.status.set('error');
+      this.error.set(this.readableAuthError(e));
+    }
+  }
+
+  async signUpWithGoogle() {
+    this.status.set('loading');
+    this.error.set(null);
+    try {
+      const cred = await this.auth.signInWithGoogle();
+      await this.auth.refreshUser();
+      await this.auth.waitForSignedInUser(cred.user.uid);
+      this.status.set('idle');
+      const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
+      if (returnUrl) {
+        await this.router.navigateByUrl(returnUrl);
+      } else {
+        await this.router.navigateByUrl(await this.store.postAuthDestination(this.auth.canAccessAdmin()));
+      }
+    } catch (e: any) {
+      this.status.set('error');
+      if (e?.code === 'auth/popup-closed-by-user') {
+        this.status.set('idle');
+        return;
+      }
       this.error.set(this.readableAuthError(e));
     }
   }

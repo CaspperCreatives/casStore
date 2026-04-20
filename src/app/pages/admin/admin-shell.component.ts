@@ -69,7 +69,8 @@ import { ArrowRight, ChevronsUpDown, LayoutDashboard, LogOut, LucideAngularModul
               </a>
 
               <a
-                routerLink="/products"
+                routerLink="/admin/products"
+                routerLinkActive="bg-slate-100 text-slate-900"
                 class="group flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900"
               >
                 <span class="inline-flex h-9 w-9 items-center justify-center rounded-2xl bg-slate-50 text-slate-600 group-hover:bg-white">
@@ -79,7 +80,8 @@ import { ArrowRight, ChevronsUpDown, LayoutDashboard, LogOut, LucideAngularModul
               </a>
 
               <a
-                routerLink="/admin"
+                routerLink="/admin/orders"
+                routerLinkActive="bg-slate-100 text-slate-900"
                 class="group flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900"
               >
                 <span class="inline-flex h-9 w-9 items-center justify-center rounded-2xl bg-slate-50 text-slate-600 group-hover:bg-white">

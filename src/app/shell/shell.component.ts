@@ -3,7 +3,8 @@ import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } fro
 import { filter } from 'rxjs/operators';
 import { AuthService } from '../core/auth.service';
 import { SiteSettingsService } from '../core/site-settings.service';
-import { Heart, LucideAngularModule, Menu, Search, ShoppingCart } from 'lucide-angular';
+import { StoreService } from '../core/store.service';
+import { Heart, LucideAngularModule, Menu, Search, ShoppingCart, Store } from 'lucide-angular';
 
 @Component({
   selector: 'app-shell',
@@ -52,11 +53,12 @@ import { Heart, LucideAngularModule, Menu, Search, ShoppingCart } from 'lucide-a
             <div class="flex items-center gap-4 text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-700">
               @if (isSignedIn()) {
                 <a routerLink="/account" class="hidden hover:text-slate-900 sm:block">Account</a>
-                <button
-                  type="button"
-                  class="hidden hover:text-slate-900 sm:block"
-                  (click)="signOut()"
-                >
+                @if (hasStore()) {
+                  <a routerLink="/my-store" class="hidden hover:text-slate-900 sm:block">My Store</a>
+                } @else {
+                  <a routerLink="/create-store" class="hidden hover:text-slate-900 sm:block">Open Store</a>
+                }
+                <button type="button" class="hidden hover:text-slate-900 sm:block" (click)="signOut()">
                   Logout
                 </button>
               } @else {
@@ -126,21 +128,23 @@ export class ShellComponent {
   readonly HeartIcon = Heart;
   readonly ShoppingCartIcon = ShoppingCart;
   readonly MenuIcon = Menu;
+  readonly StoreIcon = Store;
 
   private router = inject(Router);
   private auth = inject(AuthService);
   private site = inject(SiteSettingsService);
+  private storeService = inject(StoreService);
 
   year = computed(() => new Date().getFullYear());
   private currentUrl = signal(this.router.url);
   isHome = computed(() => this.currentUrl() === '/' || this.currentUrl() === '');
   settings = computed(() => this.site.value());
   isSignedIn = computed(() => Boolean(this.auth.user()));
+  hasStore = computed(() => this.storeService.hasStore());
 
   constructor() {
-    // Load public site settings once for banner/footer/home.
     void this.site.load().catch(() => {});
-    // Helps future: a single place to hook analytics/pageview tracking.
+    void this.storeService.loadMyStore().catch(() => {});
     this.router.events
       .pipe(filter((e) => e instanceof NavigationEnd))
       .subscribe(() => this.currentUrl.set(this.router.url));

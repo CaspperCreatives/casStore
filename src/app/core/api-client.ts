@@ -71,6 +71,29 @@ export class ApiClient {
     return json as T;
   }
 
+  async patch<T>(fn: string, body?: unknown, opts?: { auth?: boolean }): Promise<T> {
+    const res = await fetch(`${this.baseUrl()}/${fn}`, {
+      method: 'PATCH',
+      headers: await this.headers(opts),
+      body: body === undefined ? undefined : JSON.stringify(body)
+    });
+    const json = (await res.json().catch(() => ({}))) as any;
+    if (!res.ok || json?.ok === false) throw this.toError(json, res.status);
+    return json as T;
+  }
+
+  async delete<T>(fn: string, params?: Record<string, string | number | boolean | null | undefined>, opts?: { auth?: boolean }): Promise<T> {
+    const url = new URL(`${this.baseUrl()}/${fn}`);
+    for (const [k, v] of Object.entries(params ?? {})) {
+      if (v === undefined || v === null) continue;
+      url.searchParams.set(k, String(v));
+    }
+    const res = await fetch(url.toString(), { method: 'DELETE', headers: await this.headers(opts) });
+    const json = (await res.json().catch(() => ({}))) as any;
+    if (!res.ok || json?.ok === false) throw this.toError(json, res.status);
+    return json as T;
+  }
+
   private toError(json: ApiError | any, status: number) {
     const msg = json?.error?.message;
     const code = json?.error?.code;

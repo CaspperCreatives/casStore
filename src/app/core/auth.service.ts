@@ -1,13 +1,16 @@
 import { Injectable, signal } from '@angular/core';
 import {
   User,
+  GoogleAuthProvider,
   sendPasswordResetEmail,
   createUserWithEmailAndPassword,
   onIdTokenChanged,
   browserLocalPersistence,
   setPersistence,
   signInWithEmailAndPassword,
-  signOut
+  signInWithPopup,
+  signOut,
+  updateProfile
 } from 'firebase/auth';
 import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { injectAuth, injectFirestore } from './firebase';
@@ -123,6 +126,28 @@ export class AuthService {
       this.finishAuthTransition();
       throw e;
     }
+  }
+
+  async signInWithGoogle() {
+    if (!this.auth) throw new Error('Firebase Auth not configured');
+    await this.persistenceReady;
+    this.beginAuthTransition();
+    try {
+      const provider = new GoogleAuthProvider();
+      const cred = await signInWithPopup(this.auth, provider);
+      await this.ensureUserProfile(cred.user);
+      return cred;
+    } catch (e) {
+      this.finishAuthTransition();
+      throw e;
+    }
+  }
+
+  async updateDisplayName(displayName: string) {
+    if (!this.auth?.currentUser) throw new Error('Not signed in');
+    await updateProfile(this.auth.currentUser, { displayName });
+    await this.ensureUserProfile(this.auth.currentUser);
+    this.user.set({ ...this.auth.currentUser });
   }
 
   async sendPasswordReset(email: string) {
