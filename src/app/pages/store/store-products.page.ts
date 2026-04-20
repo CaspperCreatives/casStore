@@ -1,9 +1,24 @@
-import { Component, computed, effect, inject, signal } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  OnDestroy,
+  afterNextRender,
+  computed,
+  effect,
+  inject,
+  signal,
+  viewChild
+} from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { Store, StoreService } from '../../core/store.service';
 import { StoreProduct, StoreProductsService } from '../../core/store-products.service';
 import { StoreOrdersService } from '../../core/store-orders.service';
 import { AuthService } from '../../core/auth.service';
+import {
+  animateHeaderIntro,
+  refreshScrollTriggers,
+  registerBatchReveal
+} from '../../core/animations';
 import { LucideAngularModule, Package, ShoppingCart } from 'lucide-angular';
 
 @Component({
@@ -12,7 +27,7 @@ import { LucideAngularModule, Package, ShoppingCart } from 'lucide-angular';
   imports: [RouterLink, LucideAngularModule],
   template: `
     <div class="mx-auto max-w-7xl px-6 py-8">
-      <div class="mb-6">
+      <div class="mb-6" #header>
         <h1 class="text-2xl font-bold tracking-tight text-slate-900">All products</h1>
         @if (products().length > 0) {
           <p class="mt-1 text-sm text-slate-500">{{ products().length }} product{{ products().length !== 1 ? 's' : '' }}</p>
@@ -31,9 +46,12 @@ import { LucideAngularModule, Package, ShoppingCart } from 'lucide-angular';
           <p class="mt-3 text-sm text-slate-500">No products available yet.</p>
         </div>
       } @else {
-        <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+        <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4" #grid>
           @for (p of products(); track p.id) {
-            <div class="group relative overflow-hidden rounded-3xl border border-slate-200 bg-white hover:shadow-md transition-shadow">
+            <div
+              data-anim="product-card"
+              class="group relative overflow-hidden rounded-3xl border border-slate-200 bg-white hover:shadow-md transition-shadow"
+            >
               <a [routerLink]="['/store', storeSlug(), 'products', p.id]">
                 <div class="aspect-square overflow-hidden bg-slate-100">
                   @if (p.imageUrl) {
@@ -81,7 +99,7 @@ import { LucideAngularModule, Package, ShoppingCart } from 'lucide-angular';
     </div>
   `
 })
-export class StoreProductsPage {
+export class StoreProductsPage implements OnDestroy {
   readonly PackageIcon = Package;
   readonly ShoppingCartIcon = ShoppingCart;
 
@@ -95,6 +113,10 @@ export class StoreProductsPage {
   products = signal<StoreProduct[]>([]);
   loading = signal(true);
   cartMessage = signal<string | null>(null);
+
+  private header = viewChild<ElementRef<HTMLElement>>('header');
+  private grid = viewChild<ElementRef<HTMLElement>>('grid');
+  private cleanupGrid: (() => void) | null = null;
 
   private activeStore = computed<Store | null>(() =>
     this.storeService.viewingStore() ?? this.storeService.store()
@@ -111,6 +133,34 @@ export class StoreProductsPage {
       this.loadedStoreId = store.id;
       void this.load(store.id);
     });
+
+    afterNextRender(() => {
+      animateHeaderIntro(this.header()?.nativeElement);
+    });
+
+    // Re-register the stagger reveal whenever the product list renders.
+    effect(() => {
+      const count = this.products().length;
+      const isLoading = this.loading();
+      if (isLoading || count === 0) return;
+
+      // Let the @for block paint the cards, then register the batch.
+      queueMicrotask(() => this.setupGridReveal());
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.cleanupGrid?.();
+    this.cleanupGrid = null;
+  }
+
+  private setupGridReveal() {
+    this.cleanupGrid?.();
+    const gridEl = this.grid()?.nativeElement;
+    if (!gridEl) return;
+    this.cleanupGrid = registerBatchReveal(gridEl, '[data-anim="product-card"]');
+    // Images load lazily — refresh once so positions stay accurate.
+    queueMicrotask(() => refreshScrollTriggers());
   }
 
   private async load(storeId: string) {

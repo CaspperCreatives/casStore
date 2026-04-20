@@ -1,0 +1,101 @@
+[debug] [2026-04-20T21:46:44.808Z] ----------------------------------------------------------------------
+[debug] [2026-04-20T21:46:44.810Z] Command:       /Users/macbookpro16/.nvm/versions/node/v22.16.0/bin/node /Users/macbookpro16/.nvm/versions/node/v22.16.0/bin/firebase deploy --only hosting
+[debug] [2026-04-20T21:46:44.810Z] CLI Version:   15.4.0
+[debug] [2026-04-20T21:46:44.810Z] Platform:      darwin
+[debug] [2026-04-20T21:46:44.810Z] Node Version:  v22.16.0
+[debug] [2026-04-20T21:46:44.810Z] Time:          Tue Apr 21 2026 00:46:44 GMT+0300 (GMT+03:00)
+[debug] [2026-04-20T21:46:44.810Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-04-20T21:46:45.842Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-04-20T21:46:45.842Z] > authorizing via signed-in user (caspperofficial@gmail.com)
+[debug] [2026-04-20T21:46:45.842Z] [iam] checking project casstore-e3189 for permissions ["firebase.projects.get","firebasehosting.sites.update"]
+[debug] [2026-04-20T21:46:45.843Z] Checked if tokens are valid: true, expires at: 1776722755179
+[debug] [2026-04-20T21:46:45.843Z] Checked if tokens are valid: true, expires at: 1776722755179
+[debug] [2026-04-20T21:46:45.843Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/casstore-e3189:testIamPermissions [none]
+[debug] [2026-04-20T21:46:45.843Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/casstore-e3189:testIamPermissions x-goog-quota-user=projects/casstore-e3189
+[debug] [2026-04-20T21:46:45.843Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/casstore-e3189:testIamPermissions {"permissions":["firebase.projects.get","firebasehosting.sites.update"]}
+[debug] [2026-04-20T21:46:46.795Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/casstore-e3189:testIamPermissions 200
+[debug] [2026-04-20T21:46:46.795Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/casstore-e3189:testIamPermissions {"permissions":["firebase.projects.get","firebasehosting.sites.update"]}
+[debug] [2026-04-20T21:46:46.795Z] Checked if tokens are valid: true, expires at: 1776722755179
+[debug] [2026-04-20T21:46:46.795Z] Checked if tokens are valid: true, expires at: 1776722755179
+[debug] [2026-04-20T21:46:46.795Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/casstore-e3189 [none]
+[debug] [2026-04-20T21:46:47.344Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/casstore-e3189 200
+[debug] [2026-04-20T21:46:47.344Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/casstore-e3189 {"projectId":"casstore-e3189","projectNumber":"637083132540","displayName":"casStore","name":"projects/casstore-e3189","resources":{"hostingSite":"casstore-e3189"},"state":"ACTIVE","etag":"1_5c9271ff-26cf-42fd-b12c-bd963cc6c21d"}
+[info] 
+[info] === Deploying to 'casstore-e3189'...
+[info] 
+[info] i  deploying hosting 
+[debug] [2026-04-20T21:46:47.346Z] Checked if tokens are valid: true, expires at: 1776722755179
+[debug] [2026-04-20T21:46:47.346Z] Checked if tokens are valid: true, expires at: 1776722755179
+[debug] [2026-04-20T21:46:47.346Z] >>> [apiv2][query] POST https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/casstore-e3189/versions [none]
+[debug] [2026-04-20T21:46:47.346Z] >>> [apiv2][body] POST https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/casstore-e3189/versions {"status":"CREATED","labels":{"deployment-tool":"cli-firebase"}}
+[debug] [2026-04-20T21:46:49.360Z] <<< [apiv2][status] POST https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/casstore-e3189/versions 200
+[debug] [2026-04-20T21:46:49.360Z] <<< [apiv2][body] POST https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/casstore-e3189/versions {"name":"projects/637083132540/sites/casstore-e3189/versions/f25b727abdfed4eb","status":"CREATED","config":{},"labels":{"deployment-tool":"cli-firebase"}}
+[info] i  hosting[casstore-e3189]: beginning deploy... 
+[info] i  hosting[casstore-e3189]: found 7 files in dist/cas-store/browser 
+[debug] [2026-04-20T21:46:49.367Z] [hosting] uploading with 200 concurrency
+[debug] [2026-04-20T21:46:49.404Z] Checked if tokens are valid: true, expires at: 1776722755179
+[debug] [2026-04-20T21:46:49.404Z] Checked if tokens are valid: true, expires at: 1776722755179
+[debug] [2026-04-20T21:46:49.405Z] [hosting] hash cache [ZGlzdC9jYXMtc3RvcmUvYnJvd3Nlcg] stored for 7 files
+[debug] [2026-04-20T21:46:49.405Z] [hosting][hash queue][FINAL] {"max":34,"min":2,"avg":7,"active":0,"complete":7,"success":7,"errored":0,"retried":0,"total":7,"elapsed":36}
+[debug] [2026-04-20T21:46:49.405Z] >>> [apiv2][query] POST https://firebasehosting.googleapis.com/v1beta1/projects/637083132540/sites/casstore-e3189/versions/f25b727abdfed4eb:populateFiles [none]
+[debug] [2026-04-20T21:46:49.405Z] >>> [apiv2][body] POST https://firebasehosting.googleapis.com/v1beta1/projects/637083132540/sites/casstore-e3189/versions/f25b727abdfed4eb:populateFiles {"files":{"/index.html":"0bf93457708e262c0c98fa184470499e6cee40d35694b9860ae4a2e05f8811c0","/placeholders/product.svg":"f7242f9bc5bc52f1901914a2e1c3f96c7563749a470458f3de37a0746cc66af1","/placeholders/hero.svg":"baa351c46727d2c3e8851e3402313c5918069b53750ca90262713d60b0c1ebb4","/polyfills-B6TNHZQ6.js":"0d470d11ef45790298a0211b78859f53935f24a7d05c357a0bce142e2e12a925","/styles-SSM2TWBW.css":"505fd75682f66d9c1620abae98edea6c62c66bbfce8be3771d9662447b1afbbc","/favicon.ico":"8f1fc0f94ae643bb8757c3cb49f69bf6cb2228f632cb77c7e47d8ee3995d88a7","/main-JQBEAHTX.js":"7564406336b3b140cb7af966c6f9ddc285a834da43d63bd20317861ee2f129a5"}}
+[debug] [2026-04-20T21:46:50.363Z] <<< [apiv2][status] POST https://firebasehosting.googleapis.com/v1beta1/projects/637083132540/sites/casstore-e3189/versions/f25b727abdfed4eb:populateFiles 200
+[debug] [2026-04-20T21:46:50.364Z] <<< [apiv2][body] POST https://firebasehosting.googleapis.com/v1beta1/projects/637083132540/sites/casstore-e3189/versions/f25b727abdfed4eb:populateFiles {"uploadRequiredHashes":["505fd75682f66d9c1620abae98edea6c62c66bbfce8be3771d9662447b1afbbc","7564406336b3b140cb7af966c6f9ddc285a834da43d63bd20317861ee2f129a5","0bf93457708e262c0c98fa184470499e6cee40d35694b9860ae4a2e05f8811c0"],"uploadUrl":"https://upload-firebasehosting.googleapis.com/upload/sites/casstore-e3189/versions/f25b727abdfed4eb/files"}
+[debug] [2026-04-20T21:46:50.364Z] Checked if tokens are valid: true, expires at: 1776722755179
+[debug] [2026-04-20T21:46:50.364Z] Checked if tokens are valid: true, expires at: 1776722755179
+[debug] [2026-04-20T21:46:50.364Z] Checked if tokens are valid: true, expires at: 1776722755179
+[debug] [2026-04-20T21:46:50.364Z] Checked if tokens are valid: true, expires at: 1776722755179
+[debug] [2026-04-20T21:46:50.364Z] Checked if tokens are valid: true, expires at: 1776722755179
+[debug] [2026-04-20T21:46:50.364Z] Checked if tokens are valid: true, expires at: 1776722755179
+[debug] [2026-04-20T21:46:50.364Z] >>> [apiv2][query] POST https://upload-firebasehosting.googleapis.com/upload/sites/casstore-e3189/versions/f25b727abdfed4eb/files/505fd75682f66d9c1620abae98edea6c62c66bbfce8be3771d9662447b1afbbc [none]
+[debug] [2026-04-20T21:46:50.364Z] >>> [apiv2][body] POST https://upload-firebasehosting.googleapis.com/upload/sites/casstore-e3189/versions/f25b727abdfed4eb/files/505fd75682f66d9c1620abae98edea6c62c66bbfce8be3771d9662447b1afbbc [stream]
+[debug] [2026-04-20T21:46:50.365Z] >>> [apiv2][query] POST https://upload-firebasehosting.googleapis.com/upload/sites/casstore-e3189/versions/f25b727abdfed4eb/files/7564406336b3b140cb7af966c6f9ddc285a834da43d63bd20317861ee2f129a5 [none]
+[debug] [2026-04-20T21:46:50.365Z] >>> [apiv2][body] POST https://upload-firebasehosting.googleapis.com/upload/sites/casstore-e3189/versions/f25b727abdfed4eb/files/7564406336b3b140cb7af966c6f9ddc285a834da43d63bd20317861ee2f129a5 [stream]
+[debug] [2026-04-20T21:46:50.366Z] >>> [apiv2][query] POST https://upload-firebasehosting.googleapis.com/upload/sites/casstore-e3189/versions/f25b727abdfed4eb/files/0bf93457708e262c0c98fa184470499e6cee40d35694b9860ae4a2e05f8811c0 [none]
+[debug] [2026-04-20T21:46:50.366Z] >>> [apiv2][body] POST https://upload-firebasehosting.googleapis.com/upload/sites/casstore-e3189/versions/f25b727abdfed4eb/files/0bf93457708e262c0c98fa184470499e6cee40d35694b9860ae4a2e05f8811c0 [stream]
+[debug] [2026-04-20T21:46:50.366Z] [hosting][populate queue][FINAL] {"max":960,"min":960,"avg":960,"active":0,"complete":1,"success":1,"errored":0,"retried":0,"total":1,"elapsed":962}
+[debug] [2026-04-20T21:46:50.367Z] [hosting] uploads queued: 3
+[debug] [2026-04-20T21:46:51.687Z] <<< [apiv2][status] POST https://upload-firebasehosting.googleapis.com/upload/sites/casstore-e3189/versions/f25b727abdfed4eb/files/0bf93457708e262c0c98fa184470499e6cee40d35694b9860ae4a2e05f8811c0 200
+[debug] [2026-04-20T21:46:51.687Z] <<< [apiv2][body] POST https://upload-firebasehosting.googleapis.com/upload/sites/casstore-e3189/versions/f25b727abdfed4eb/files/0bf93457708e262c0c98fa184470499e6cee40d35694b9860ae4a2e05f8811c0 [stream]
+[debug] [2026-04-20T21:46:51.705Z] <<< [apiv2][status] POST https://upload-firebasehosting.googleapis.com/upload/sites/casstore-e3189/versions/f25b727abdfed4eb/files/505fd75682f66d9c1620abae98edea6c62c66bbfce8be3771d9662447b1afbbc 200
+[debug] [2026-04-20T21:46:51.705Z] <<< [apiv2][body] POST https://upload-firebasehosting.googleapis.com/upload/sites/casstore-e3189/versions/f25b727abdfed4eb/files/505fd75682f66d9c1620abae98edea6c62c66bbfce8be3771d9662447b1afbbc [stream]
+[debug] [2026-04-20T21:46:51.824Z] <<< [apiv2][status] POST https://upload-firebasehosting.googleapis.com/upload/sites/casstore-e3189/versions/f25b727abdfed4eb/files/7564406336b3b140cb7af966c6f9ddc285a834da43d63bd20317861ee2f129a5 200
+[debug] [2026-04-20T21:46:51.824Z] <<< [apiv2][body] POST https://upload-firebasehosting.googleapis.com/upload/sites/casstore-e3189/versions/f25b727abdfed4eb/files/7564406336b3b140cb7af966c6f9ddc285a834da43d63bd20317861ee2f129a5 [stream]
+[debug] [2026-04-20T21:46:51.824Z] [hosting][upload queue][FINAL] {"max":1460,"min":1323,"avg":1374.6666666666667,"active":0,"complete":3,"success":3,"errored":0,"retried":0,"total":3,"elapsed":1460}
+[info] ✔  hosting[casstore-e3189]: file upload complete 
+[debug] [2026-04-20T21:46:51.825Z] [hosting] deploy completed after 2463ms
+[debug] [2026-04-20T21:46:51.825Z] [
+  {
+    "config": {
+      "public": "dist/cas-store/browser",
+      "ignore": [
+        "firebase.json",
+        "**/.*",
+        "**/node_modules/**"
+      ],
+      "rewrites": [
+        {
+          "source": "**",
+          "destination": "/index.html"
+        }
+      ],
+      "site": "casstore-e3189"
+    },
+    "version": "projects/637083132540/sites/casstore-e3189/versions/f25b727abdfed4eb"
+  }
+]
+[info] i  hosting[casstore-e3189]: finalizing version... 
+[debug] [2026-04-20T21:46:51.826Z] Checked if tokens are valid: true, expires at: 1776722755179
+[debug] [2026-04-20T21:46:51.826Z] Checked if tokens are valid: true, expires at: 1776722755179
+[debug] [2026-04-20T21:46:51.826Z] >>> [apiv2][query] PATCH https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/casstore-e3189/versions/f25b727abdfed4eb updateMask=status%2Cconfig
+[debug] [2026-04-20T21:46:51.827Z] >>> [apiv2][body] PATCH https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/casstore-e3189/versions/f25b727abdfed4eb {"status":"FINALIZED","config":{"rewrites":[{"glob":"**","path":"/index.html"}]}}
+[debug] [2026-04-20T21:46:53.345Z] <<< [apiv2][status] PATCH https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/casstore-e3189/versions/f25b727abdfed4eb 200
+[debug] [2026-04-20T21:46:53.345Z] <<< [apiv2][body] PATCH https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/casstore-e3189/versions/f25b727abdfed4eb {"name":"projects/637083132540/sites/casstore-e3189/versions/f25b727abdfed4eb","status":"FINALIZED","config":{"rewrites":[{"glob":"**","path":"/index.html"}]},"labels":{"deployment-tool":"cli-firebase"},"createTime":"2026-04-20T21:46:48.241117Z","createUser":{"email":"caspperofficial@gmail.com"},"finalizeTime":"2026-04-20T21:46:53.204546Z","finalizeUser":{"email":"caspperofficial@gmail.com"}}
+[debug] [2026-04-20T21:46:53.345Z] [hosting] finalized version for casstore-e3189:[object Object]
+[info] ✔  hosting[casstore-e3189]: version finalized 
+[info] i  hosting[casstore-e3189]: releasing new version... 
+[debug] [2026-04-20T21:46:53.345Z] Checked if tokens are valid: true, expires at: 1776722755179
+[debug] [2026-04-20T21:46:53.345Z] Checked if tokens are valid: true, expires at: 1776722755179
+[debug] [2026-04-20T21:46:53.345Z] >>> [apiv2][query] POST https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/casstore-e3189/channels/live/releases versionName=projects%2F637083132540%2Fsites%2Fcasstore-e3189%2Fversions%2Ff25b727abdfed4eb
+[debug] [2026-04-20T21:46:53.345Z] >>> [apiv2][body] POST https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/casstore-e3189/channels/live/releases {}

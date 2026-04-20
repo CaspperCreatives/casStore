@@ -1,5 +1,13 @@
-import { Component, input } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  OnDestroy,
+  afterNextRender,
+  inject,
+  input
+} from '@angular/core';
 import { Store, StoreSection } from '../../../core/store.service';
+import { registerSectionReveal } from '../../../core/animations';
 import { HeroSectionComponent } from './hero-section.component';
 import { BannerSectionComponent } from './banner-section.component';
 import { FeaturedProductsSectionComponent } from './featured-products-section.component';
@@ -34,6 +42,9 @@ import { RichTextSectionComponent } from './rich-text-section.component';
     ValuePropsSectionComponent,
     RichTextSectionComponent
   ],
+  host: {
+    class: 'block'
+  },
   template: `
     @switch (section().type) {
       @case ('hero')             { <app-hero-section              [cfg]="$any(section()).config" [store]="store()" /> }
@@ -53,7 +64,26 @@ import { RichTextSectionComponent } from './rich-text-section.component';
     }
   `
 })
-export class SectionRendererComponent {
+export class SectionRendererComponent implements OnDestroy {
   section = input.required<StoreSection>();
   store = input.required<Store>();
+
+  private host = inject(ElementRef<HTMLElement>);
+  private cleanupReveal: (() => void) | null = null;
+
+  constructor() {
+    afterNextRender(() => {
+      // Hero sections are the first thing the visitor sees — leave them
+      // alone so they don't fade in while already in view on page load.
+      if (this.section().type === 'hero' || this.section().type === 'heroSlider') {
+        return;
+      }
+      this.cleanupReveal = registerSectionReveal(this.host.nativeElement);
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.cleanupReveal?.();
+    this.cleanupReveal = null;
+  }
 }
