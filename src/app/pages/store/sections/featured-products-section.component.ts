@@ -1,7 +1,8 @@
-import { Component, effect, inject, input, signal } from '@angular/core';
+import { Component, computed, effect, inject, input, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { FeaturedProductsConfig, Store } from '../../../core/store.service';
 import { StoreProduct, StoreProductsService } from '../../../core/store-products.service';
+import { StoreRouterService } from '../../../core/store-router';
 import { LucideAngularModule, Package } from 'lucide-angular';
 
 @Component({
@@ -12,7 +13,7 @@ import { LucideAngularModule, Package } from 'lucide-angular';
     <section class="mx-auto max-w-7xl px-6 py-12">
       <div class="mb-6 flex items-center justify-between">
         <h2 class="text-2xl font-bold tracking-tight text-slate-900">{{ cfg().title || 'Featured products' }}</h2>
-        <a [routerLink]="['/store', store().slug, 'products']" class="text-sm font-semibold text-slate-600 hover:text-slate-900">
+        <a [routerLink]="productsLink()" class="text-sm font-semibold text-slate-600 hover:text-slate-900">
           View all &rarr;
         </a>
       </div>
@@ -31,7 +32,7 @@ import { LucideAngularModule, Package } from 'lucide-angular';
       } @else {
         <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
           @for (p of displayed(); track p.id) {
-            <a [routerLink]="['/store', store().slug, 'products', p.id]"
+            <a [routerLink]="productLink(p.id)"
               class="group overflow-hidden rounded-3xl border border-slate-200 bg-white transition-shadow hover:shadow-md">
               <div class="aspect-square overflow-hidden bg-slate-100">
                 @if (p.imageUrl) {
@@ -62,8 +63,11 @@ export class FeaturedProductsSectionComponent {
   store = input.required<Store>();
 
   private productsService = inject(StoreProductsService);
+  private storeRouter = inject(StoreRouterService);
   loading = signal(true);
   displayed = signal<StoreProduct[]>([]);
+  productsLink = computed(() => this.storeRouter.link(['products']));
+  productLink = (productId: string) => this.storeRouter.link(['products', productId]);
 
   constructor() {
     effect(() => {

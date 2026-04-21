@@ -4,6 +4,8 @@ import { Store, StoreService } from '../../core/store.service';
 import { StoreProduct, StoreProductsService } from '../../core/store-products.service';
 import { StoreOrdersService } from '../../core/store-orders.service';
 import { AuthService } from '../../core/auth.service';
+import { StoreRouterService } from '../../core/store-router';
+import { TENANT_CONTEXT } from '../../core/host-routing';
 import { LucideAngularModule, Minus, Package, Plus, ShoppingCart } from 'lucide-angular';
 
 @Component({
@@ -12,7 +14,7 @@ import { LucideAngularModule, Minus, Package, Plus, ShoppingCart } from 'lucide-
   imports: [RouterLink, LucideAngularModule],
   template: `
     <div class="mx-auto max-w-5xl px-6 py-8">
-      <a [routerLink]="['/store', storeSlug(), 'products']" class="mb-6 inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-900">
+      <a [routerLink]="productsLink()" class="mb-6 inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-900">
         ← Back to products
       </a>
 
@@ -29,7 +31,7 @@ import { LucideAngularModule, Minus, Package, Plus, ShoppingCart } from 'lucide-
         <div class="rounded-3xl border border-dashed border-slate-300 py-16 text-center">
           <lucide-angular [img]="PackageIcon" class="mx-auto h-12 w-12 text-slate-300" />
           <p class="mt-3 text-sm text-slate-500">Product not found.</p>
-          <a [routerLink]="['/store', storeSlug(), 'products']" class="mt-4 inline-block text-sm font-semibold text-slate-900 hover:underline">
+          <a [routerLink]="productsLink()" class="mt-4 inline-block text-sm font-semibold text-slate-900 hover:underline">
             Browse products
           </a>
         </div>
@@ -99,7 +101,7 @@ import { LucideAngularModule, Minus, Package, Plus, ShoppingCart } from 'lucide-
               </div>
             }
 
-            <a [routerLink]="['/store', storeSlug(), 'cart']"
+            <a [routerLink]="cartLink()"
               class="mt-4 text-center text-sm font-semibold text-slate-600 hover:text-slate-900 hover:underline">
               View cart →
             </a>
@@ -121,6 +123,8 @@ export class StoreProductPage {
   private productsService = inject(StoreProductsService);
   private ordersService = inject(StoreOrdersService);
   private auth = inject(AuthService);
+  private storeRouter = inject(StoreRouterService);
+  private tenant = inject(TENANT_CONTEXT, { optional: true });
 
   storeSlug = signal('');
   productId = signal('');
@@ -131,13 +135,16 @@ export class StoreProductPage {
   cartMessage = signal<string | null>(null);
   cartError = signal<string | null>(null);
 
+  productsLink = computed(() => this.storeRouter.link(['products']));
+  cartLink = computed(() => this.storeRouter.link(['cart']));
+
   private activeStore = computed<Store | null>(() =>
     this.storeService.viewingStore() ?? this.storeService.store()
   );
   private loadedKey: string | null = null;
 
   constructor() {
-    const slug = this.route.parent?.snapshot.paramMap.get('storeSlug') ?? '';
+    const slug = this.tenant?.slug ?? this.route.parent?.snapshot.paramMap.get('storeSlug') ?? '';
     const productId = this.route.snapshot.paramMap.get('productId') ?? '';
     this.storeSlug.set(slug);
     this.productId.set(productId);

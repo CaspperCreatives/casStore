@@ -14,6 +14,8 @@ import { Store, StoreService } from '../../core/store.service';
 import { StoreProduct, StoreProductsService } from '../../core/store-products.service';
 import { StoreOrdersService } from '../../core/store-orders.service';
 import { AuthService } from '../../core/auth.service';
+import { StoreRouterService } from '../../core/store-router';
+import { TENANT_CONTEXT } from '../../core/host-routing';
 import {
   animateHeaderIntro,
   refreshScrollTriggers,
@@ -52,7 +54,7 @@ import { LucideAngularModule, Package, ShoppingCart } from 'lucide-angular';
               data-anim="product-card"
               class="group relative overflow-hidden rounded-3xl border border-slate-200 bg-white hover:shadow-md transition-shadow"
             >
-              <a [routerLink]="['/store', storeSlug(), 'products', p.id]">
+              <a [routerLink]="productLink(p.id)">
                 <div class="aspect-square overflow-hidden bg-slate-100">
                   @if (p.imageUrl) {
                     <img [src]="p.imageUrl" [alt]="p.name"
@@ -108,11 +110,15 @@ export class StoreProductsPage implements OnDestroy {
   private productsService = inject(StoreProductsService);
   private ordersService = inject(StoreOrdersService);
   private auth = inject(AuthService);
+  private storeRouter = inject(StoreRouterService);
+  private tenant = inject(TENANT_CONTEXT, { optional: true });
 
   storeSlug = signal('');
   products = signal<StoreProduct[]>([]);
   loading = signal(true);
   cartMessage = signal<string | null>(null);
+
+  productLink = (productId: string) => this.storeRouter.link(['products', productId]);
 
   private header = viewChild<ElementRef<HTMLElement>>('header');
   private grid = viewChild<ElementRef<HTMLElement>>('grid');
@@ -124,7 +130,7 @@ export class StoreProductsPage implements OnDestroy {
   private loadedStoreId: string | null = null;
 
   constructor() {
-    const slug = this.route.parent?.snapshot.paramMap.get('storeSlug') ?? '';
+    const slug = this.tenant?.slug ?? this.route.parent?.snapshot.paramMap.get('storeSlug') ?? '';
     this.storeSlug.set(slug);
 
     effect(() => {

@@ -2,6 +2,8 @@ import { Component, computed, effect, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { Store, StoreService } from '../../core/store.service';
 import { StorePage, StorePagesService } from '../../core/store-pages.service';
+import { StoreRouterService } from '../../core/store-router';
+import { TENANT_CONTEXT } from '../../core/host-routing';
 import { SectionRendererComponent } from './sections/section-renderer.component';
 
 @Component({
@@ -23,7 +25,7 @@ import { SectionRendererComponent } from './sections/section-renderer.component'
         <div class="text-6xl">404</div>
         <h1 class="mt-4 text-2xl font-bold text-slate-900">Page not found</h1>
         <p class="mt-2 text-sm text-slate-500">We couldn't find the page you were looking for.</p>
-        <a [routerLink]="['/store', storeSlug()]"
+        <a [routerLink]="homeLink()"
           class="mt-6 inline-block rounded-2xl bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-slate-800">
           Back to home
         </a>
@@ -48,17 +50,20 @@ export class StorePagePage {
   private route = inject(ActivatedRoute);
   private storeService = inject(StoreService);
   private pagesService = inject(StorePagesService);
+  private storeRouter = inject(StoreRouterService);
+  private tenant = inject(TENANT_CONTEXT, { optional: true });
 
   store = computed<Store | null>(() => this.storeService.viewingStore() ?? this.storeService.store());
   storeSlug = signal('');
   pageSlug = signal('');
   page = signal<StorePage | null>(null);
   loading = signal(true);
+  homeLink = computed(() => this.storeRouter.link([]));
   private loadedKey: string | null = null;
 
   constructor() {
     const parent = this.route.parent?.snapshot.paramMap;
-    this.storeSlug.set(parent?.get('storeSlug') ?? '');
+    this.storeSlug.set(this.tenant?.slug ?? parent?.get('storeSlug') ?? '');
     this.pageSlug.set(this.route.snapshot.paramMap.get('pageSlug') ?? '');
 
     this.route.paramMap.subscribe((params) => {

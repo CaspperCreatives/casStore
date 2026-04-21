@@ -2,6 +2,7 @@ import { Component, computed, effect, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { buildDefaultSections, Store, StoreSection, StoreService } from '../../core/store.service';
 import { StorePage, StorePagesService } from '../../core/store-pages.service';
+import { StoreRouterService } from '../../core/store-router';
 import { SectionRendererComponent } from './sections/section-renderer.component';
 
 @Component({
@@ -24,6 +25,7 @@ export class StoreHomePage {
   private storeService = inject(StoreService);
   private pagesService = inject(StorePagesService);
   private router = inject(Router);
+  private storeRouter = inject(StoreRouterService);
 
   store = computed<Store | null>(() => this.storeService.viewingStore() ?? this.storeService.store());
   homePage = signal<StorePage | null>(null);
@@ -44,7 +46,7 @@ export class StoreHomePage {
       if (!s) return;
 
       if (s.homeTarget === 'products') {
-        void this.router.navigate(['/store', s.slug, 'products'], { replaceUrl: true });
+        void this.router.navigate(this.storeRouter.link(['products']), { replaceUrl: true });
         return;
       }
 

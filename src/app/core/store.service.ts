@@ -1,6 +1,7 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { ApiClient } from './api-client';
 import { AuthService } from './auth.service';
+import { environment } from '../../environments/environment';
 
 export type HeroHeightMode = 'sm' | 'md' | 'lg' | 'full' | 'custom';
 export type HeroVerticalAlignment = 'top' | 'center' | 'bottom';
@@ -260,6 +261,32 @@ export class StoreService {
     }
   }
 
+  /**
+   * Loads a store by its subdomain slug (used by the host-routing layer when
+   * the app is served from `<slug>.casstore.store`). Backend currently aliases
+   * `?subdomain=` to the same `stores.slug` index.
+   */
+  async loadBySubdomain(slug: string): Promise<Store | null> {
+    try {
+      const json = await this.api.get<{ ok: true; store: Store }>('storeGet', { subdomain: slug });
+      this.viewingStore.set(json.store);
+      return json.store;
+    } catch {
+      this.viewingStore.set(null);
+      return null;
+    }
+  }
+
+  /** Absolute subdomain URL for the given store (e.g. `https://lama.casstore.store`). */
+  subdomainUrl(store: Pick<Store, 'slug'>): string {
+    return `https://${store.slug}.${environment.rootDomain}`;
+  }
+
+  /** Apex (path-based) URL for the given store (e.g. `https://casstore.store/store/lama`). */
+  apexUrl(store: Pick<Store, 'slug'>): string {
+    return `https://${environment.rootDomain}/store/${store.slug}`;
+  }
+
   async createStore(data: {
     name: string;
     slug: string;
@@ -294,6 +321,24 @@ export class StoreService {
     const view = this.viewingStore();
     if (view) this.viewingStore.set({ ...view, navItems: res.navItems });
     return res.navItems;
+  }
+
+  /**
+   * Public counter used by the marketing landing page. Returns `{ active, total }`
+   * where `active` = currently published stores and `total` = lifetime count.
+   * Errors are swallowed so the counter can fall back to a safe default without
+   * breaking the page.
+   */
+  async loadStoresCount(): Promise<{ active: number; total: number }> {
+    try {
+      const json = await this.api.get<{ ok: true; active: number; total: number }>('storesCount');
+      return {
+        active: Number(json.active) || 0,
+        total: Number(json.total) || 0
+      };
+    } catch {
+      return { active: 0, total: 0 };
+    }
   }
 
   async postAuthDestination(canAccessAdmin: boolean): Promise<string> {

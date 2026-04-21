@@ -1,10 +1,6 @@
 import { Routes } from '@angular/router';
 import { ShellComponent } from './shell/shell.component';
-import { HomePage } from './pages/home/home.page';
-import { ProductsPage } from './pages/products/products.page';
-import { ProductPage } from './pages/product/product.page';
-import { CartPage } from './pages/cart/cart.page';
-import { CheckoutPage } from './pages/checkout/checkout.page';
+import { LandingPage } from './pages/landing/landing.page';
 import { AccountPage } from './pages/account/account.page';
 import { AccountOrdersPage } from './pages/account/account-orders.page';
 import { SignInPage } from './pages/auth/sign-in.page';
@@ -34,8 +30,12 @@ import { StoreProductsPage } from './pages/store/store-products.page';
 import { StoreProductPage } from './pages/store/store-product.page';
 import { StoreCartPage } from './pages/store/store-cart.page';
 import { StoreCheckoutPage } from './pages/store/store-checkout.page';
+import { DemosIndexPage } from './pages/demos/demos-index.page';
+import { DemoStorePage } from './pages/demos/demo-store.page';
+import { detectTenantFromHost } from './core/host-routing';
 
-export const routes: Routes = [
+// Routes that exist in both subdomain and apex modes (admin panel + owner dashboard).
+const platformRoutes: Routes = [
   // ── Admin panel ────────────────────────────────────────────────────────────
   {
     path: 'admin',
@@ -68,44 +68,88 @@ export const routes: Routes = [
       { path: 'storefront/pages/:pageId', component: MyStorePageEditorPage },
       { path: 'settings', component: MyStoreSettingsPage }
     ]
-  },
-
-  // ── Public per-store storefront ────────────────────────────────────────────
-  {
-    path: 'store/:storeSlug',
-    component: StoreShellComponent,
-    children: [
-      { path: '', component: StoreHomePage },
-      { path: 'products', component: StoreProductsPage },
-      { path: 'products/:productId', component: StoreProductPage },
-      { path: 'p/:pageSlug', component: StorePagePage },
-      { path: 'cart', component: StoreCartPage, canActivate: [authGuard] },
-      { path: 'checkout', component: StoreCheckoutPage, canActivate: [authGuard] }
-    ]
-  },
-
-  // ── Global storefront shell ────────────────────────────────────────────────
-  {
-    path: '',
-    component: ShellComponent,
-    children: [
-      { path: '', component: HomePage },
-      { path: 'products/:id', component: ProductPage },
-      { path: 'products', component: ProductsPage },
-      { path: 'cart', component: CartPage, canActivate: [authGuard] },
-      { path: 'checkout', component: CheckoutPage, canActivate: [authGuard] },
-      {
-        path: 'account',
-        canActivate: [authGuard],
-        children: [
-          { path: '', component: AccountPage },
-          { path: 'orders', component: AccountOrdersPage }
-        ]
-      },
-      { path: 'sign-in', component: SignInPage },
-      { path: 'sign-up', component: SignUpPage },
-      { path: 'reset-password', component: ResetPasswordPage },
-      { path: '**', redirectTo: '' }
-    ]
   }
+];
+
+// Storefront children (shared across both routing modes via StoreShellComponent).
+const storefrontChildren: Routes = [
+  { path: '', component: StoreHomePage },
+  { path: 'products', component: StoreProductsPage },
+  { path: 'products/:productId', component: StoreProductPage },
+  { path: 'p/:pageSlug', component: StorePagePage },
+  { path: 'cart', component: StoreCartPage, canActivate: [authGuard] },
+  { path: 'checkout', component: StoreCheckoutPage, canActivate: [authGuard] }
+];
+
+// Tenant mode: serve the storefront at the root, no `/store/:slug` prefix.
+function tenantRoutes(): Routes {
+  return [
+    {
+      path: '',
+      component: StoreShellComponent,
+      children: [
+        ...storefrontChildren,
+        // Auth pages still need to be reachable on subdomain hosts.
+        { path: 'sign-in', component: SignInPage },
+        { path: 'sign-up', component: SignUpPage },
+        { path: 'reset-password', component: ResetPasswordPage },
+        {
+          path: 'account',
+          canActivate: [authGuard],
+          children: [
+            { path: '', component: AccountPage },
+            { path: 'orders', component: AccountOrdersPage }
+          ]
+        },
+        { path: '**', redirectTo: '' }
+      ]
+    }
+  ];
+}
+
+// Apex mode (casstore.store): platform marketing landing at `/`, with
+// per-store storefronts still reachable under `/store/:storeSlug/...`.
+function apexRoutes(): Routes {
+  return [
+    // ── Platform marketing landing ───────────────────────────────────────────
+    { path: '', component: LandingPage, pathMatch: 'full' },
+
+    // ── Demo stores (marketing showcases built from real sections) ──────────
+    { path: 'demos', component: DemosIndexPage, pathMatch: 'full' },
+    { path: 'demos/:demoId', component: DemoStorePage },
+
+    // ── Public per-store storefront ──────────────────────────────────────────
+    {
+      path: 'store/:storeSlug',
+      component: StoreShellComponent,
+      children: storefrontChildren
+    },
+
+    // ── Auth + account pages (wrapped in the global shell) ───────────────────
+    {
+      path: '',
+      component: ShellComponent,
+      children: [
+        {
+          path: 'account',
+          canActivate: [authGuard],
+          children: [
+            { path: '', component: AccountPage },
+            { path: 'orders', component: AccountOrdersPage }
+          ]
+        },
+        { path: 'sign-in', component: SignInPage },
+        { path: 'sign-up', component: SignUpPage },
+        { path: 'reset-password', component: ResetPasswordPage },
+        { path: '**', redirectTo: '' }
+      ]
+    }
+  ];
+}
+
+const tenant = detectTenantFromHost();
+
+export const routes: Routes = [
+  ...platformRoutes,
+  ...(tenant ? tenantRoutes() : apexRoutes())
 ];

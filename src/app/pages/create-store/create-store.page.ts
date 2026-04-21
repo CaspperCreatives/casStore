@@ -84,16 +84,37 @@ const CATEGORIES = [
 
               <div>
                 <label class="mb-1.5 block text-[13px] font-semibold uppercase tracking-wider text-slate-700">Store URL *</label>
-                <div class="flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 focus-within:border-slate-900 focus-within:bg-white focus-within:ring-4 focus-within:ring-slate-900/5">
-                  <span class="shrink-0 text-sm text-slate-400">casstore.app/store/</span>
+                <div class="flex items-center gap-1 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 focus-within:border-slate-900 focus-within:bg-white focus-within:ring-4 focus-within:ring-slate-900/5">
+                  @if (!subdomainsEnabled) {
+                    <span class="shrink-0 text-sm text-slate-400">{{ rootDomain }}/store/</span>
+                  }
                   <input
                     type="text"
                     [(ngModel)]="slug"
                     placeholder="my-awesome-store"
                     class="min-w-0 flex-1 bg-transparent text-sm outline-none"
                   />
+                  @if (subdomainsEnabled) {
+                    <span class="shrink-0 text-sm text-slate-400">.{{ rootDomain }}</span>
+                  }
                 </div>
-                <p class="mt-1 px-1 text-[11px] text-slate-400">Only lowercase letters, numbers and hyphens.</p>
+                @if (slug.trim()) {
+                  <div class="mt-2 space-y-0.5 px-1 text-[12px]">
+                    @if (subdomainsEnabled) {
+                      <div class="font-semibold text-slate-900">
+                        Your store URL: <span class="font-mono">{{ slug }}.{{ rootDomain }}</span>
+                      </div>
+                      <div class="text-slate-400">
+                        Platform link: <span class="font-mono">{{ rootDomain }}/store/{{ slug }}</span>
+                      </div>
+                    } @else {
+                      <div class="font-semibold text-slate-900">
+                        Your store URL: <span class="font-mono">{{ rootDomain }}/store/{{ slug }}</span>
+                      </div>
+                    }
+                  </div>
+                }
+                <p class="mt-1 px-1 text-[11px] text-slate-400">3–30 chars. Lowercase letters, numbers and hyphens only.</p>
               </div>
 
               <div>
@@ -177,9 +198,16 @@ const CATEGORIES = [
                 <span class="text-slate-500">Store name</span>
                 <span class="font-semibold text-slate-900">{{ name }}</span>
               </div>
-              <div class="flex items-start justify-between gap-4">
-                <span class="text-slate-500">URL</span>
-                <span class="font-mono text-slate-700">/store/{{ slug }}</span>
+              <div class="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
+                <span class="text-slate-500">Your store URL</span>
+                <div class="text-right">
+                  @if (subdomainsEnabled) {
+                    <div class="font-mono text-sm font-semibold text-slate-900">{{ slug }}.{{ rootDomain }}</div>
+                    <div class="mt-0.5 text-[11px] text-slate-400 font-mono">{{ rootDomain }}/store/{{ slug }}</div>
+                  } @else {
+                    <div class="font-mono text-sm font-semibold text-slate-900">{{ rootDomain }}/store/{{ slug }}</div>
+                  }
+                </div>
               </div>
               <div class="flex items-start justify-between gap-4">
                 <span class="text-slate-500">Category</span>
@@ -200,6 +228,16 @@ const CATEGORIES = [
             @if (status() === 'error') {
               <div class="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
                 {{ error() }}
+              </div>
+            }
+            @if (status() === 'success' && launchedSlug()) {
+              <div class="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+                <div class="font-semibold">Your store is live!</div>
+                @if (subdomainsEnabled) {
+                  <div class="mt-0.5 font-mono text-[12px]">{{ launchedSlug() }}.{{ rootDomain }}</div>
+                } @else {
+                  <div class="mt-0.5 font-mono text-[12px]">{{ rootDomain }}/store/{{ launchedSlug() }}</div>
+                }
               </div>
             }
           }
@@ -232,11 +270,15 @@ const CATEGORIES = [
               <button
                 type="button"
                 class="flex items-center gap-2 rounded-2xl bg-slate-900 px-6 py-2.5 text-sm font-bold text-white hover:bg-slate-800 disabled:opacity-50"
-                [disabled]="status() === 'loading' || !firebaseConfigured()"
+                [disabled]="status() === 'loading' || status() === 'success' || !firebaseConfigured()"
                 (click)="launch()"
               >
-                @if (status() === 'loading') { Launching... } @else { Launch store }
-                @if (status() !== 'loading') {
+                @if (status() === 'loading') {
+                  Launching...
+                } @else if (status() === 'success') {
+                  Redirecting...
+                } @else {
+                  Launch store
                   <lucide-angular [img]="ArrowRightIcon" class="h-4 w-4" />
                 }
               </button>
@@ -257,10 +299,13 @@ export class CreateStorePage {
   private router = inject(Router);
 
   firebaseConfigured = computed(() => Boolean(environment.firebase?.apiKey));
+  readonly rootDomain = environment.rootDomain;
+  readonly subdomainsEnabled = environment.subdomainsEnabled;
 
   currentStep = signal(1);
-  status = signal<'idle' | 'loading' | 'error'>('idle');
+  status = signal<'idle' | 'loading' | 'error' | 'success'>('idle');
   error = signal<string | null>(null);
+  launchedSlug = signal<string | null>(null);
 
   name = '';
   slug = '';
@@ -326,13 +371,30 @@ export class CreateStorePage {
         logoUrl: this.logoUrl.trim() || undefined,
         themeColor: this.themeColor
       });
-      await this.router.navigateByUrl('/my-store');
+      this.launchedSlug.set(slug);
+      this.status.set('success');
+      // Brief success state so the user sees the live URL before we navigate.
+      setTimeout(() => {
+        void this.router.navigate(['/my-store'], { queryParams: { welcome: '1' } });
+      }, 900);
     } catch (e: any) {
       this.status.set('error');
       const msg = String(e?.message ?? e);
-      if (msg.includes('slug_taken')) this.error.set('That store URL is already taken. Please choose a different name.');
-      else if (msg.includes('store_exists')) this.error.set('You already have a store.');
-      else this.error.set(msg);
+      if (msg.includes('slug_taken')) {
+        this.error.set('That store URL is already taken. Please choose another.');
+      } else if (msg.includes('reserved_slug')) {
+        this.error.set(`"${this.slug}" is a reserved word — please try another URL.`);
+      } else if (msg.includes('slug_too_short')) {
+        this.error.set('Store URL must be at least 3 characters.');
+      } else if (msg.includes('slug_too_long')) {
+        this.error.set('Store URL must be 30 characters or fewer.');
+      } else if (msg.includes('invalid_slug')) {
+        this.error.set('Store URL can only contain lowercase letters, numbers, and hyphens.');
+      } else if (msg.includes('store_exists')) {
+        this.error.set('You already have a store.');
+      } else {
+        this.error.set(msg);
+      }
     }
   }
 }

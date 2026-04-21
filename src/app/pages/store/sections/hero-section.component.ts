@@ -1,6 +1,7 @@
-import { Component, computed, input } from '@angular/core';
+import { Component, computed, inject, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { HeroConfig, Store } from '../../../core/store.service';
+import { StoreRouterService } from '../../../core/store-router';
 
 @Component({
   selector: 'app-hero-section',
@@ -51,7 +52,7 @@ import { HeroConfig, Store } from '../../../core/store.service';
                   {{ cfg().ctaLabel }}
                 </a>
               } @else {
-                <a [routerLink]="['/store', store().slug, 'products']"
+                <a [routerLink]="productsLink()"
                   class="inline-block rounded-2xl bg-white px-8 py-3.5 text-sm font-bold text-slate-900 hover:bg-slate-100">
                   {{ cfg().ctaLabel }}
                 </a>
@@ -66,6 +67,8 @@ import { HeroConfig, Store } from '../../../core/store.service';
 export class HeroSectionComponent {
   cfg = input.required<HeroConfig>();
   store = input.required<Store>();
+  private storeRouter = inject(StoreRouterService);
+  productsLink = computed(() => this.storeRouter.link(['products']));
   overlayOpacity = computed(() => Math.min(100, Math.max(0, this.cfg().backgroundOverlay ?? 40)) / 100);
 
   verticalAlign = computed(() => this.cfg().verticalAlignment ?? 'center');

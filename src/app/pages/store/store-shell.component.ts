@@ -12,6 +12,8 @@ import { ActivatedRoute, Router, RouterLink, RouterLinkActive, RouterOutlet } fr
 import { AuthService } from '../../core/auth.service';
 import { NavItem, Store as StoreModel, StoreService } from '../../core/store.service';
 import { StoreOrdersService } from '../../core/store-orders.service';
+import { TENANT_CONTEXT } from '../../core/host-routing';
+import { environment } from '../../../environments/environment';
 import { animateDrawerClose, animateDrawerOpen } from '../../core/animations';
 import {
   Heart,
@@ -52,14 +54,14 @@ type RenderedNavLink = {
           >
             <lucide-angular [img]="MenuIcon" class="h-6 w-6" />
           </button>
-          <a [routerLink]="['/store', storeSlug()]" class="flex min-w-0 items-center gap-2">
+          <a [routerLink]="homeLink()" class="flex min-w-0 items-center gap-2">
             @if (store()?.logoUrl) {
               <img [src]="store()!.logoUrl" alt="" class="h-7 w-7 rounded-xl object-cover" />
             }
             <span class="truncate text-sm font-bold tracking-tight">{{ store()?.name ?? 'Store' }}</span>
           </a>
           <a
-            [routerLink]="['/store', storeSlug(), 'cart']"
+            [routerLink]="cartLink()"
             class="tap-target relative inline-flex items-center justify-center rounded-2xl text-slate-700 hover:bg-slate-100"
             aria-label="Cart"
           >
@@ -78,13 +80,13 @@ type RenderedNavLink = {
             @if (store()?.logoUrl) {
               <img [src]="store()!.logoUrl" alt="" class="h-8 w-8 rounded-xl object-cover" />
             }
-            <a [routerLink]="['/store', storeSlug()]" class="text-lg font-bold tracking-tight">
+            <a [routerLink]="homeLink()" class="text-lg font-bold tracking-tight">
               {{ store()?.name ?? 'Store' }}
             </a>
           </div>
 
           <nav class="hidden items-center gap-6 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-600 md:flex">
-            <a [routerLink]="['/store', storeSlug()]" class="hover:text-slate-900">Home</a>
+            <a [routerLink]="homeLink()" class="hover:text-slate-900">Home</a>
             @for (link of headerNavLinks(); track link.id) {
               @if (link.routerLink) {
                 <a [routerLink]="link.routerLink" class="hover:text-slate-900">{{ link.label }}</a>
@@ -101,7 +103,7 @@ type RenderedNavLink = {
             } @else {
               <a routerLink="/sign-in" class="hidden text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-600 hover:text-slate-900 sm:block">Sign in</a>
             }
-            <a [routerLink]="['/store', storeSlug(), 'cart']" class="relative p-1 text-slate-600 hover:text-slate-900">
+            <a [routerLink]="cartLink()" class="relative p-1 text-slate-600 hover:text-slate-900">
               <lucide-angular [img]="ShoppingCartIcon" class="h-5 w-5" />
               @if (cartCount() > 0) {
                 <span class="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-slate-900 text-[10px] font-bold text-white">
@@ -180,7 +182,7 @@ type RenderedNavLink = {
             <div class="flex-1 overflow-y-auto px-3 py-3">
               <div class="space-y-1">
                 <a
-                  [routerLink]="['/store', storeSlug()]"
+                  [routerLink]="homeLink()"
                   [routerLinkActiveOptions]="{ exact: true }"
                   routerLinkActive="bg-slate-100 text-slate-900"
                   (click)="closeDrawer()"
@@ -226,7 +228,7 @@ type RenderedNavLink = {
 
               <div class="mt-4 border-t border-slate-200 pt-3 space-y-1">
                 <a
-                  [routerLink]="['/store', storeSlug(), 'cart']"
+                  [routerLink]="cartLink()"
                   (click)="closeDrawer()"
                   data-anim="nav-item"
                   class="flex items-center gap-3 rounded-2xl px-3 py-3 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-50"
@@ -283,7 +285,7 @@ type RenderedNavLink = {
       >
         <div class="mx-auto grid max-w-3xl grid-cols-4">
           <a
-            [routerLink]="['/store', storeSlug()]"
+            [routerLink]="homeLink()"
             routerLinkActive="text-slate-900"
             [routerLinkActiveOptions]="{ exact: true }"
             #homeRla="routerLinkActive"
@@ -299,7 +301,7 @@ type RenderedNavLink = {
             <span>Home</span>
           </a>
           <a
-            [routerLink]="['/store', storeSlug(), 'products']"
+            [routerLink]="productsLink()"
             routerLinkActive="text-slate-900"
             #shopRla="routerLinkActive"
             class="flex flex-col items-center justify-center gap-0.5 py-2 text-[10px] font-semibold uppercase tracking-wider text-slate-500"
@@ -314,7 +316,7 @@ type RenderedNavLink = {
             <span>Shop</span>
           </a>
           <a
-            [routerLink]="['/store', storeSlug(), 'cart']"
+            [routerLink]="cartLink()"
             routerLinkActive="text-slate-900"
             #cartRla="routerLinkActive"
             class="flex flex-col items-center justify-center gap-0.5 py-2 text-[10px] font-semibold uppercase tracking-wider text-slate-500"
@@ -368,6 +370,7 @@ export class StoreShellComponent {
   private auth = inject(AuthService);
   private storeService = inject(StoreService);
   private ordersService = inject(StoreOrdersService);
+  private tenant = inject(TENANT_CONTEXT, { optional: true });
 
   store = signal<StoreModel | null>(null);
   loadingStore = signal(true);
@@ -382,15 +385,21 @@ export class StoreShellComponent {
   themeColor = computed(() => this.store()?.themeColor ?? '#0f172a');
   cartCount = computed(() => this.ordersService.cartItems().reduce((s, i) => s + i.quantity, 0));
 
+  // Tenant-aware RouterLink arrays. Recomputed when slug changes so that
+  // both subdomain (`['/']`) and apex (`['/store', slug]`) modes work.
+  homeLink = computed(() => this.linkFor([]));
+  productsLink = computed(() => this.linkFor(['products']));
+  cartLink = computed(() => this.linkFor(['cart']));
+
   navLinks = computed<RenderedNavLink[]>(() => {
     const s = this.store();
     const slug = this.storeSlug();
     if (!s || !slug) return [];
     const items = s.navItems ?? [];
     if (items.length === 0) {
-      return [{ id: 'default-shop', label: 'Shop', placement: 'both', routerLink: ['/store', slug, 'products'] }];
+      return [{ id: 'default-shop', label: 'Shop', placement: 'both', routerLink: this.linkFor(['products']) }];
     }
-    return items.map((item) => this.resolveNavItem(item, slug));
+    return items.map((item) => this.resolveNavItem(item));
   });
 
   headerNavLinks = computed(() =>
@@ -402,7 +411,9 @@ export class StoreShellComponent {
   );
 
   constructor() {
-    const slug = this.route.snapshot.paramMap.get('storeSlug') ?? '';
+    // In tenant (subdomain) mode the slug comes from the host, otherwise
+    // it's the `/store/:storeSlug/...` route parameter.
+    const slug = this.tenant?.slug ?? this.route.snapshot.paramMap.get('storeSlug') ?? '';
     this.storeSlug.set(slug);
     void this.loadStore(slug);
 
@@ -462,16 +473,43 @@ export class StoreShellComponent {
 
   private async loadStore(slug: string) {
     this.loadingStore.set(true);
-    const store = await this.storeService.loadBySlug(slug);
+    const store = this.tenant
+      ? await this.storeService.loadBySubdomain(slug)
+      : await this.storeService.loadBySlug(slug);
     this.store.set(store);
     this.loadingStore.set(false);
 
     if (store && this.auth.user()) {
       void this.ordersService.loadCart(store.id).catch(() => {});
     }
+
+    // Canonical URL: when we're on the apex `casstore.store/store/<slug>/...`
+    // in production, redirect to `<slug>.casstore.store/...`. Gated by
+    // `environment.production` so `localhost:4200` keeps the path-based URL
+    // during local development, and by `environment.subdomainsEnabled` so
+    // the redirect never fires until wildcard hosting is actually live.
+    if (
+      !this.tenant &&
+      environment.production &&
+      environment.subdomainsEnabled &&
+      store?.slug &&
+      typeof window !== 'undefined'
+    ) {
+      const rest = this.router.url.replace(`/store/${store.slug}`, '') || '/';
+      window.location.replace(
+        `https://www.${store.slug}.${environment.rootDomain}${rest.startsWith('/') ? rest : '/' + rest}`
+      );
+    }
   }
 
-  private resolveNavItem(item: NavItem, storeSlug: string): RenderedNavLink {
+  /** Tenant-aware RouterLink array for a storefront path. */
+  private linkFor(segments: ReadonlyArray<string | number>): any[] {
+    if (this.tenant) return ['/', ...segments];
+    const slug = this.storeSlug();
+    return slug ? ['/store', slug, ...segments] : ['/'];
+  }
+
+  private resolveNavItem(item: NavItem): RenderedNavLink {
     const placement = item.placement ?? 'both';
     switch (item.kind) {
       case 'page':
@@ -479,14 +517,14 @@ export class StoreShellComponent {
           id: item.id,
           label: item.label,
           placement,
-          routerLink: ['/store', storeSlug, 'p', item.pageSlug]
+          routerLink: this.linkFor(['p', item.pageSlug])
         };
       case 'builtin': {
         const link = item.target === 'cart'
-          ? ['/store', storeSlug, 'cart']
+          ? this.linkFor(['cart'])
           : item.target === 'account'
             ? ['/account']
-            : ['/store', storeSlug, 'products'];
+            : this.linkFor(['products']);
         return { id: item.id, label: item.label, placement, routerLink: link };
       }
       case 'url':

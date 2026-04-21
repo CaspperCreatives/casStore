@@ -3,6 +3,8 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth.service';
 import { Store, StoreService } from '../../core/store.service';
 import { StoreOrdersService } from '../../core/store-orders.service';
+import { StoreRouterService } from '../../core/store-router';
+import { TENANT_CONTEXT } from '../../core/host-routing';
 import { LucideAngularModule, Minus, Plus, Trash2 } from 'lucide-angular';
 
 @Component({
@@ -28,7 +30,7 @@ import { LucideAngularModule, Minus, Plus, Trash2 } from 'lucide-angular';
         <div class="mt-6 rounded-3xl border border-dashed border-slate-300 bg-white py-16 text-center">
           <div class="text-5xl">🛒</div>
           <p class="mt-3 text-sm text-slate-500">Your cart is empty.</p>
-          <a [routerLink]="['/store', storeSlug(), 'products']"
+          <a [routerLink]="productsLink()"
             class="mt-4 inline-block rounded-2xl bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-slate-800">
             Continue shopping
           </a>
@@ -87,12 +89,12 @@ import { LucideAngularModule, Minus, Plus, Trash2 } from 'lucide-angular';
           </div>
 
           <a
-            [routerLink]="['/store', storeSlug(), 'checkout']"
+            [routerLink]="checkoutLink()"
             class="block w-full rounded-2xl bg-slate-900 px-6 py-3.5 text-center text-sm font-bold text-white hover:bg-slate-800"
           >
             Proceed to checkout
           </a>
-          <a [routerLink]="['/store', storeSlug(), 'products']"
+          <a [routerLink]="productsLink()"
             class="block text-center text-sm text-slate-500 hover:text-slate-900">
             ← Continue shopping
           </a>
@@ -114,6 +116,8 @@ export class StoreCartPage {
   private storeService = inject(StoreService);
   private ordersService = inject(StoreOrdersService);
   private auth = inject(AuthService);
+  private storeRouter = inject(StoreRouterService);
+  private tenant = inject(TENANT_CONTEXT, { optional: true });
 
   storeSlug = signal('');
   cartItems = this.ordersService.cartItems;
@@ -122,7 +126,15 @@ export class StoreCartPage {
   error = signal<string | null>(null);
   isSignedIn = computed(() => Boolean(this.auth.user()));
 
+  productsLink = computed(() => this.storeRouter.link(['products']));
+  checkoutLink = computed(() => this.storeRouter.link(['checkout']));
+
+  /**
+   * URL passed as `returnUrl` to the sign-in page. In subdomain mode we want
+   * the user to return to `/cart`; in apex mode to `/store/<slug>/cart`.
+   */
   currentUrl = computed(() => {
+    if (this.tenant) return '/cart';
     const slug = this.storeSlug();
     return `/store/${slug}/cart`;
   });
@@ -143,7 +155,7 @@ export class StoreCartPage {
   private loadedStoreId: string | null = null;
 
   constructor() {
-    const slug = this.route.parent?.snapshot.paramMap.get('storeSlug') ?? '';
+    const slug = this.tenant?.slug ?? this.route.parent?.snapshot.paramMap.get('storeSlug') ?? '';
     this.storeSlug.set(slug);
 
     effect(() => {

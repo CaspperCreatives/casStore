@@ -1,6 +1,7 @@
-import { Component, input } from '@angular/core';
+import { Component, computed, inject, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { CategoryGridConfig, Store } from '../../../core/store.service';
+import { StoreRouterService } from '../../../core/store-router';
 import { LucideAngularModule, LayoutGrid } from 'lucide-angular';
 
 @Component({
@@ -20,7 +21,7 @@ import { LucideAngularModule, LayoutGrid } from 'lucide-angular';
       } @else {
         <div class="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
           @for (c of cfg().categories; track $index) {
-            <a [routerLink]="['/store', store().slug, 'products']"
+            <a [routerLink]="productsLink()"
               [queryParams]="c.productFilter ? { category: c.productFilter } : {}"
               class="group relative aspect-[4/3] overflow-hidden rounded-3xl bg-slate-100">
               @if (c.imageUrl) {
@@ -42,4 +43,6 @@ export class CategoryGridSectionComponent {
   readonly GridIcon = LayoutGrid;
   cfg = input.required<CategoryGridConfig>();
   store = input.required<Store>();
+  private storeRouter = inject(StoreRouterService);
+  productsLink = computed(() => this.storeRouter.link(['products']));
 }

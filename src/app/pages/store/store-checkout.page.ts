@@ -5,6 +5,8 @@ import { AuthService } from '../../core/auth.service';
 import { Store, StoreService } from '../../core/store.service';
 import { StoreOrdersService } from '../../core/store-orders.service';
 import { ApiClient, ApiClientError } from '../../core/api-client';
+import { StoreRouterService } from '../../core/store-router';
+import { TENANT_CONTEXT } from '../../core/host-routing';
 import { LucideAngularModule } from 'lucide-angular';
 
 @Component({
@@ -31,7 +33,7 @@ import { LucideAngularModule } from 'lucide-angular';
             <a routerLink="/account/orders" class="rounded-2xl bg-emerald-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-emerald-800">
               View your orders
             </a>
-            <a [routerLink]="['/store', storeSlug(), 'products']"
+            <a [routerLink]="productsLink()"
               class="rounded-2xl border border-emerald-300 bg-white px-5 py-2.5 text-sm font-semibold text-emerald-800 hover:bg-emerald-50">
               Continue shopping
             </a>
@@ -135,6 +137,8 @@ export class StoreCheckoutPage {
   private storeService = inject(StoreService);
   private ordersService = inject(StoreOrdersService);
   private auth = inject(AuthService);
+  private storeRouter = inject(StoreRouterService);
+  private tenant = inject(TENANT_CONTEXT, { optional: true });
 
   storeSlug = signal('');
   cartItems = this.ordersService.cartItems;
@@ -143,7 +147,10 @@ export class StoreCheckoutPage {
   orderId = signal<string | null>(null);
 
   isSignedIn = computed(() => Boolean(this.auth.user()));
-  currentUrl = computed(() => `/store/${this.storeSlug()}/checkout`);
+  productsLink = computed(() => this.storeRouter.link(['products']));
+  currentUrl = computed(() =>
+    this.tenant ? '/checkout' : `/store/${this.storeSlug()}/checkout`
+  );
 
   addr = { fullName: '', line1: '', line2: '', city: '', state: '', postalCode: '', country: '' };
   notes = '';
@@ -172,7 +179,7 @@ export class StoreCheckoutPage {
   private loadedStoreId: string | null = null;
 
   constructor() {
-    const slug = this.route.parent?.snapshot.paramMap.get('storeSlug') ?? '';
+    const slug = this.tenant?.slug ?? this.route.parent?.snapshot.paramMap.get('storeSlug') ?? '';
     this.storeSlug.set(slug);
 
     effect(() => {
