@@ -1,12 +1,9 @@
 import {
   Component,
-  ElementRef,
   HostListener,
   computed,
-  effect,
   inject,
-  signal,
-  viewChild
+  signal
 } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthService } from '../../core/auth.service';
@@ -14,7 +11,6 @@ import { NavItem, Store as StoreModel, StoreService } from '../../core/store.ser
 import { StoreOrdersService } from '../../core/store-orders.service';
 import { TENANT_CONTEXT } from '../../core/host-routing';
 import { environment } from '../../../environments/environment';
-import { animateDrawerClose, animateDrawerOpen } from '../../core/animations';
 import {
   Heart,
   Home,
@@ -154,13 +150,11 @@ type RenderedNavLink = {
       </footer>
 
       <!-- Mobile drawer -->
-      @if (drawerMounted()) {
+      @if (drawerOpen()) {
         <div class="fixed inset-0 z-40 md:hidden" role="dialog" aria-modal="true">
-          <div #drawerBackdrop class="absolute inset-0 bg-slate-900/50 backdrop-blur-sm opacity-0" (click)="closeDrawer()"></div>
+          <div class="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" (click)="closeDrawer()"></div>
           <aside
-            #drawerPanel
-            class="absolute inset-y-0 left-0 flex w-[82%] max-w-[320px] flex-col bg-white shadow-xl pt-safe will-change-transform"
-            style="transform: translateX(-100%)"
+            class="absolute inset-y-0 left-0 flex w-[82%] max-w-[320px] flex-col bg-white shadow-xl pt-safe"
           >
             <div class="flex items-center justify-between gap-3 border-b border-slate-200 px-4 py-3" data-anim="nav-item">
               <div class="flex min-w-0 items-center gap-2">
@@ -376,10 +370,7 @@ export class StoreShellComponent {
   loadingStore = signal(true);
   storeSlug = signal('');
   drawerOpen = signal(false);
-  drawerMounted = signal(false);
 
-  private drawerPanel = viewChild<ElementRef<HTMLElement>>('drawerPanel');
-  private drawerBackdrop = viewChild<ElementRef<HTMLElement>>('drawerBackdrop');
   year = computed(() => new Date().getFullYear());
   isSignedIn = computed(() => Boolean(this.auth.user()));
   themeColor = computed(() => this.store()?.themeColor ?? '#0f172a');
@@ -421,16 +412,6 @@ export class StoreShellComponent {
       this.drawerOpen.set(false);
     });
 
-    effect(() => {
-      const open = this.drawerOpen();
-      if (open) {
-        this.drawerMounted.set(true);
-        queueMicrotask(() => this.playDrawerOpen());
-      } else if (this.drawerMounted()) {
-        void this.playDrawerClose();
-      }
-    });
-
     if (typeof window !== 'undefined') {
       window.addEventListener('message', (ev) => {
         if (ev.origin !== window.location.origin) return;
@@ -453,22 +434,6 @@ export class StoreShellComponent {
   @HostListener('document:keydown.escape')
   onEscape() {
     if (this.drawerOpen()) this.drawerOpen.set(false);
-  }
-
-  private playDrawerOpen() {
-    const panel = this.drawerPanel()?.nativeElement;
-    const backdrop = this.drawerBackdrop()?.nativeElement;
-    if (!panel || !backdrop) return;
-    animateDrawerOpen(panel, backdrop);
-  }
-
-  private async playDrawerClose() {
-    const panel = this.drawerPanel()?.nativeElement;
-    const backdrop = this.drawerBackdrop()?.nativeElement;
-    if (panel && backdrop) {
-      await animateDrawerClose(panel, backdrop);
-    }
-    this.drawerMounted.set(false);
   }
 
   private async loadStore(slug: string) {

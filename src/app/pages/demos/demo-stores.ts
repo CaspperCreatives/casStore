@@ -11,7 +11,7 @@ export type DemoStore = {
   id: string;
   /** Short marketing descriptor shown on the demos index + demo header. */
   tagline: string;
-  /** Which preset this demo derives from (matches SECTION_PRESETS ids). */
+  /** Local taxonomy label for the demo's overall style. */
   presetId: 'minimal' | 'retail' | 'brand' | 'launch' | 'full';
   store: Store;
   sections: StoreSection[];

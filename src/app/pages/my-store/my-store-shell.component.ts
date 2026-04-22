@@ -14,6 +14,7 @@ import { filter } from 'rxjs/operators';
 import { AuthService } from '../../core/auth.service';
 import { StoreService } from '../../core/store.service';
 import { StorePagesService } from '../../core/store-pages.service';
+import { VerifyEmailBannerComponent } from '../../shared/verify-email-banner.component';
 import {
   animateDrawerClose,
   animateDrawerOpen,
@@ -23,6 +24,7 @@ import {
   ArrowRight,
   BarChart2,
   Home,
+  Inbox,
   LayoutDashboard,
   LogOut,
   LucideAngularModule,
@@ -38,7 +40,7 @@ import {
 @Component({
   selector: 'app-my-store-shell',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, LucideAngularModule],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, LucideAngularModule, VerifyEmailBannerComponent],
   template: `
     <div class="min-h-dvh bg-slate-100 text-slate-900">
       <div class="mx-auto flex min-h-dvh w-full gap-6 lg:px-4 lg:py-4 max-w-[1400px]">
@@ -174,6 +176,9 @@ import {
           </header>
 
           <main class="px-3 pb-tabbar pt-3 lg:px-0 lg:pb-8 lg:pt-0">
+            <div class="mb-3 lg:mb-4">
+              <app-verify-email-banner />
+            </div>
             <router-outlet />
           </main>
         </div>
@@ -313,6 +318,7 @@ export class MyStoreShellComponent {
     { path: '/my-store', label: 'Dashboard', icon: LayoutDashboard, exact: true },
     { path: '/my-store/products', label: 'Products', icon: Package, exact: false },
     { path: '/my-store/orders', label: 'Orders', icon: ReceiptText, exact: false },
+    { path: '/my-store/submissions', label: 'Submissions', icon: Inbox, exact: false },
     { path: '/my-store/storefront', label: 'Storefront', icon: Palette, exact: false },
     { path: '/my-store/settings', label: 'Settings', icon: Settings, exact: false }
   ];
@@ -321,7 +327,7 @@ export class MyStoreShellComponent {
     { path: '/my-store', label: 'Home', icon: LayoutDashboard, exact: true },
     { path: '/my-store/products', label: 'Shop', icon: Package, exact: false },
     { path: '/my-store/orders', label: 'Orders', icon: ReceiptText, exact: false },
-    { path: '/my-store/storefront', label: 'Design', icon: Palette, exact: false },
+    { path: '/my-store/submissions', label: 'Inbox', icon: Inbox, exact: false },
     { path: '/my-store/settings', label: 'More', icon: Settings, exact: false }
   ];
 
@@ -365,6 +371,7 @@ export class MyStoreShellComponent {
     const url = this.currentUrl();
     if (url.startsWith('/my-store/products')) return 'Products';
     if (url.startsWith('/my-store/orders')) return 'Orders';
+    if (url.startsWith('/my-store/submissions')) return 'Submissions';
     if (url.startsWith('/my-store/storefront')) return 'Storefront';
     if (url.startsWith('/my-store/settings')) return 'Settings';
     return 'Dashboard';

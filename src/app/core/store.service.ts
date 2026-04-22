@@ -129,6 +129,26 @@ export type RichTextConfig = {
   maxWidth: 'narrow' | 'wide';
 };
 
+export type FormFieldType = 'text' | 'email' | 'tel' | 'textarea' | 'select' | 'checkbox';
+export type FormField = {
+  id: string;
+  type: FormFieldType;
+  label: string;
+  required: boolean;
+  placeholder: string;
+  /** For 'select' fields: the list of options shown to the visitor. */
+  options: string[];
+};
+export type FormSectionConfig = {
+  title: string;
+  description: string;
+  fields: FormField[];
+  submitLabel: string;
+  successMessage: string;
+  /** Optional: if set, owner receives an email on each submission. */
+  notifyEmail: string;
+};
+
 export type SectionType =
   | 'hero'
   | 'banner'
@@ -143,7 +163,8 @@ export type SectionType =
   | 'logos'
   | 'promoCards'
   | 'valueProps'
-  | 'richText';
+  | 'richText'
+  | 'form';
 
 export type StoreSection =
   | { id: string; type: 'hero';             visible: boolean; config: HeroConfig }
@@ -159,7 +180,8 @@ export type StoreSection =
   | { id: string; type: 'logos';            visible: boolean; config: LogosConfig }
   | { id: string; type: 'promoCards';       visible: boolean; config: PromoCardsConfig }
   | { id: string; type: 'valueProps';       visible: boolean; config: ValuePropsConfig }
-  | { id: string; type: 'richText';         visible: boolean; config: RichTextConfig };
+  | { id: string; type: 'richText';         visible: boolean; config: RichTextConfig }
+  | { id: string; type: 'form';             visible: boolean; config: FormSectionConfig };
 
 export type NavPlacement = 'header' | 'footer' | 'both';
 export type NavItem =

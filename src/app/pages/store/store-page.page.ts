@@ -39,7 +39,7 @@ import { SectionRendererComponent } from './sections/section-renderer.component'
         }
         @for (section of page()!.sections; track section.id) {
           @if (section.visible) {
-            <app-section-renderer [section]="section" [store]="store()!" />
+            <app-section-renderer [section]="section" [store]="store()!" [pageId]="page()!.id" />
           }
         }
       </div>

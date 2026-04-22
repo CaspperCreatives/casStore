@@ -22,6 +22,7 @@ import { LogosSectionComponent } from './logos-section.component';
 import { PromoCardsSectionComponent } from './promo-cards-section.component';
 import { ValuePropsSectionComponent } from './value-props-section.component';
 import { RichTextSectionComponent } from './rich-text-section.component';
+import { FormSectionComponent } from './form-section.component';
 
 @Component({
   selector: 'app-section-renderer',
@@ -40,7 +41,8 @@ import { RichTextSectionComponent } from './rich-text-section.component';
     LogosSectionComponent,
     PromoCardsSectionComponent,
     ValuePropsSectionComponent,
-    RichTextSectionComponent
+    RichTextSectionComponent,
+    FormSectionComponent
   ],
   host: {
     class: 'block'
@@ -61,12 +63,14 @@ import { RichTextSectionComponent } from './rich-text-section.component';
       @case ('promoCards')       { <app-promo-cards-section       [cfg]="$any(section()).config" /> }
       @case ('valueProps')       { <app-value-props-section       [cfg]="$any(section()).config" /> }
       @case ('richText')         { <app-rich-text-section         [cfg]="$any(section()).config" /> }
+      @case ('form')             { <app-form-section              [cfg]="$any(section()).config" [store]="store()" [pageId]="pageId()" [sectionId]="section().id" /> }
     }
   `
 })
 export class SectionRendererComponent implements OnDestroy {
   section = input.required<StoreSection>();
   store = input.required<Store>();
+  pageId = input<string>('');
 
   private host = inject(ElementRef<HTMLElement>);
   private cleanupReveal: (() => void) | null = null;

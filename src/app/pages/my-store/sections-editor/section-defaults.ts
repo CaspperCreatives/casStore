@@ -131,6 +131,22 @@ export function createDefaultSection(type: SectionType): StoreSection {
           maxWidth: 'narrow'
         }
       };
+    case 'form':
+      return {
+        id, type, visible: true,
+        config: {
+          title: 'Contact us',
+          description: 'Send us a message and we\'ll get back to you shortly.',
+          fields: [
+            { id: `fld_${Math.random().toString(36).slice(2, 8)}`, type: 'text',     label: 'Name',    required: true,  placeholder: 'Your name',         options: [] },
+            { id: `fld_${Math.random().toString(36).slice(2, 8)}`, type: 'email',    label: 'Email',   required: true,  placeholder: 'you@example.com',   options: [] },
+            { id: `fld_${Math.random().toString(36).slice(2, 8)}`, type: 'textarea', label: 'Message', required: true,  placeholder: 'How can we help?',  options: [] }
+          ],
+          submitLabel: 'Send message',
+          successMessage: 'Thanks! We\'ll be in touch soon.',
+          notifyEmail: ''
+        }
+      };
   }
 }
 
@@ -148,5 +164,6 @@ export const SECTION_TYPE_META: Record<SectionType, { label: string; description
   logos:            { label: 'Logos / awards',    description: 'Row of partner, press, or award logos.',                  icon: 'Award' },
   promoCards:       { label: 'Promo cards',       description: 'Short labelled cards (NEW / SALE / BUNDLE).',             icon: 'LayoutList' },
   valueProps:       { label: 'Value props',       description: 'Icon + title + description strip of benefits.',           icon: 'Sparkle' },
-  richText:         { label: 'Rich text',         description: 'A simple text-only block for stories or copy.',           icon: 'Type' }
+  richText:         { label: 'Rich text',         description: 'A simple text-only block for stories or copy.',           icon: 'Type' },
+  form:             { label: 'Form',              description: 'Contact / lead capture form with custom fields.',         icon: 'ClipboardList' }
 };

@@ -6,6 +6,7 @@ import { AccountOrdersPage } from './pages/account/account-orders.page';
 import { SignInPage } from './pages/auth/sign-in.page';
 import { SignUpPage } from './pages/auth/sign-up.page';
 import { ResetPasswordPage } from './pages/auth/reset-password.page';
+import { AuthActionPage } from './pages/auth/auth-action.page';
 import { authGuard } from './core/auth.guard';
 import { adminGuard } from './core/admin.guard';
 import { storeOwnerGuard } from './core/store-owner.guard';
@@ -23,6 +24,8 @@ import { MyStoreSettingsPage } from './pages/my-store/my-store-settings.page';
 import { MyStorePagesListPage } from './pages/my-store/my-store-pages-list.page';
 import { MyStorePageEditorPage } from './pages/my-store/my-store-page-editor.page';
 import { MyStoreNavEditorPage } from './pages/my-store/my-store-nav-editor.page';
+import { MyStoreSubmissionsPage } from './pages/my-store/my-store-submissions.page';
+import { MyStoreSubmissionDetailPage } from './pages/my-store/my-store-submission-detail.page';
 import { StoreShellComponent } from './pages/store/store-shell.component';
 import { StoreHomePage } from './pages/store/store-home.page';
 import { StorePagePage } from './pages/store/store-page.page';
@@ -63,6 +66,8 @@ const platformRoutes: Routes = [
       { path: '', component: MyStoreDashboardPage },
       { path: 'products', component: MyStoreProductsPage },
       { path: 'orders', component: MyStoreOrdersPage },
+      { path: 'submissions', component: MyStoreSubmissionsPage },
+      { path: 'submissions/:submissionId', component: MyStoreSubmissionDetailPage },
       { path: 'storefront', component: MyStorePagesListPage },
       { path: 'storefront/nav', component: MyStoreNavEditorPage },
       { path: 'storefront/pages/:pageId', component: MyStorePageEditorPage },
@@ -90,18 +95,19 @@ function tenantRoutes(): Routes {
       children: [
         ...storefrontChildren,
         // Auth pages still need to be reachable on subdomain hosts.
-        { path: 'sign-in', component: SignInPage },
-        { path: 'sign-up', component: SignUpPage },
-        { path: 'reset-password', component: ResetPasswordPage },
-        {
-          path: 'account',
-          canActivate: [authGuard],
-          children: [
-            { path: '', component: AccountPage },
-            { path: 'orders', component: AccountOrdersPage }
-          ]
-        },
-        { path: '**', redirectTo: '' }
+          { path: 'sign-in', component: SignInPage },
+          { path: 'sign-up', component: SignUpPage },
+          { path: 'reset-password', component: ResetPasswordPage },
+          { path: 'auth/action', component: AuthActionPage },
+          {
+            path: 'account',
+            canActivate: [authGuard],
+            children: [
+              { path: '', component: AccountPage },
+              { path: 'orders', component: AccountOrdersPage }
+            ]
+          },
+          { path: '**', redirectTo: '' }
       ]
     }
   ];
@@ -141,6 +147,7 @@ function apexRoutes(): Routes {
         { path: 'sign-in', component: SignInPage },
         { path: 'sign-up', component: SignUpPage },
         { path: 'reset-password', component: ResetPasswordPage },
+        { path: 'auth/action', component: AuthActionPage },
         { path: '**', redirectTo: '' }
       ]
     }

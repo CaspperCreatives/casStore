@@ -1,8 +1,7 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, computed, signal } from '@angular/core';
 import {
   User,
   GoogleAuthProvider,
-  sendPasswordResetEmail,
   createUserWithEmailAndPassword,
   onIdTokenChanged,
   browserLocalPersistence,
@@ -13,6 +12,7 @@ import {
   updateProfile
 } from 'firebase/auth';
 import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
+import { environment } from '../../environments/environment';
 import { injectAuth, injectFirestore } from './firebase';
 import { canAccessAdmin, isValidRoleId, ROLES, RoleId } from './roles';
 
@@ -24,6 +24,8 @@ export class AuthService {
   readonly user = signal<User | null>(null);
   readonly ready = signal(false);
   readonly rolesReady = signal(false);
+  /** True when the current user has verified their email. False when signed out. */
+  readonly emailVerified = computed(() => Boolean(this.user()?.emailVerified));
   private readyWaiters: Array<() => void> = [];
   private persistenceReady: Promise<void> | null = null;
   /**
@@ -96,6 +98,11 @@ export class AuthService {
     try {
       const cred = await createUserWithEmailAndPassword(this.auth, email, password);
       await this.ensureUserProfile(cred.user);
+      // Fire-and-forget verification email via Postmark. We deliberately don't
+      // await so a transient Functions error can't block the signup flow.
+      void this.sendVerificationEmail().catch((e) => {
+        console.warn('Unable to send verification email immediately.', e);
+      });
       return cred;
     } catch (e) {
       this.finishAuthTransition();
@@ -150,10 +157,63 @@ export class AuthService {
     this.user.set({ ...this.auth.currentUser });
   }
 
+  /**
+   * Triggers a password-reset email via our backend (Postmark).
+   *
+   * The backend always responds 200 (no account-enumeration), so this call
+   * resolves even if the address has no account — UI should always show the
+   * same "if an account exists, we sent a link" confirmation.
+   */
   async sendPasswordReset(email: string) {
-    if (!this.auth) throw new Error('Firebase Auth not configured');
-    await this.persistenceReady;
-    await sendPasswordResetEmail(this.auth, email.trim());
+    const addr = email.trim().toLowerCase();
+    if (!addr) throw new Error('Please enter your email address.');
+    const res = await fetch(this.functionUrl('sendPasswordResetEmail'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: addr })
+    });
+    if (res.status === 429) {
+      throw new Error('Too many attempts. Please wait and try again.');
+    }
+    // 400 is the only other failure mode we surface (bad email); 200 is always
+    // the success signal regardless of whether an account exists.
+    if (!res.ok) {
+      const body = await res.json().catch(() => null as any);
+      throw new Error(body?.error?.message || 'Unable to send reset email right now.');
+    }
+  }
+
+  /**
+   * Triggers an email-verification message for the currently-signed-in user.
+   * Safe to call repeatedly — the backend enforces a 60s per-user rate limit
+   * and returns `{ alreadyVerified: true }` once the user has verified.
+   */
+  async sendVerificationEmail(): Promise<{ ok: true; alreadyVerified?: boolean }> {
+    const token = await this.getIdToken();
+    if (!token) throw new Error('You must be signed in to request a verification email.');
+    const res = await fetch(this.functionUrl('sendVerificationEmail'), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    if (res.status === 429) {
+      const body = await res.json().catch(() => null as any);
+      throw new Error(body?.error?.message || 'Please wait a minute before requesting another verification email.');
+    }
+    if (!res.ok) {
+      const body = await res.json().catch(() => null as any);
+      throw new Error(body?.error?.message || 'Unable to send verification email right now.');
+    }
+    return (await res.json()) as { ok: true; alreadyVerified?: boolean };
+  }
+
+  private functionUrl(fn: string): string {
+    const projectId = environment.firebase?.projectId;
+    const region = environment.functionsRegion ?? 'us-central1';
+    if (!projectId) throw new Error('Firebase projectId not configured');
+    return `https://${region}-${projectId}.cloudfunctions.net/${fn}`;
   }
 
   async refreshUser() {

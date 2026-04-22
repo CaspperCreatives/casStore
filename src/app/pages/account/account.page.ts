@@ -5,16 +5,21 @@ import { environment } from '../../../environments/environment';
 import { AuthService } from '../../core/auth.service';
 import { StoreService } from '../../core/store.service';
 import { LucideAngularModule, LogOut, Package, Save, Store, User } from 'lucide-angular';
+import { VerifyEmailBannerComponent } from '../../shared/verify-email-banner.component';
 
 @Component({
   selector: 'app-account-page',
   standalone: true,
-  imports: [RouterLink, FormsModule, LucideAngularModule],
+  imports: [RouterLink, FormsModule, LucideAngularModule, VerifyEmailBannerComponent],
   template: `
     <div class="mx-auto max-w-2xl">
       <div class="mb-6">
         <h1 class="text-2xl font-semibold tracking-tight">Account</h1>
         <p class="text-sm text-slate-600">Manage your profile and store</p>
+      </div>
+
+      <div class="mb-4">
+        <app-verify-email-banner />
       </div>
 
       @if (!firebaseConfigured()) {

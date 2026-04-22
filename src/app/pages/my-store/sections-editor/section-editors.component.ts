@@ -1,12 +1,16 @@
+import { CdkDrag, CdkDragDrop, CdkDragHandle, CdkDropList, moveItemInArray } from '@angular/cdk/drag-drop';
 import { Component, computed, input, output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { LucideAngularModule, Plus, Trash2 } from 'lucide-angular';
+import { GripVertical, LucideAngularModule, Plus, Trash2 } from 'lucide-angular';
 import {
   BannerConfig,
   CategoryGridConfig,
   CategoryGridItem,
   CtaConfig,
   FeaturedProductsConfig,
+  FormField,
+  FormFieldType,
+  FormSectionConfig,
   GalleryConfig,
   GalleryImage,
   HeroConfig,
@@ -910,6 +914,154 @@ export class RichTextEditorComponent {
 }
 
 // ──────────────────────────────────────────────────────────────────────────
+// Form (contact / lead capture)
+// ──────────────────────────────────────────────────────────────────────────
+@Component({
+  selector: 'app-form-editor',
+  standalone: true,
+  imports: [FormsModule, LucideAngularModule, CdkDropList, CdkDrag, CdkDragHandle],
+  template: `
+    <div class="space-y-4">
+      <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+        <div>
+          <label class="${LABEL_CLS}">Title</label>
+          <input type="text" [ngModel]="cfg().title" (ngModelChange)="patch({ title: $event })" class="${INPUT_CLS}" />
+        </div>
+        <div>
+          <label class="${LABEL_CLS}">Submit button label</label>
+          <input type="text" [ngModel]="cfg().submitLabel" (ngModelChange)="patch({ submitLabel: $event })" class="${INPUT_CLS}" />
+        </div>
+      </div>
+
+      <div>
+        <label class="${LABEL_CLS}">Description (optional)</label>
+        <textarea rows="2" [ngModel]="cfg().description" (ngModelChange)="patch({ description: $event })" class="${INPUT_CLS}"></textarea>
+      </div>
+
+      <div>
+        <label class="${LABEL_CLS}">Success message</label>
+        <input type="text" [ngModel]="cfg().successMessage" (ngModelChange)="patch({ successMessage: $event })" class="${INPUT_CLS}" />
+      </div>
+
+      <div>
+        <label class="${LABEL_CLS}">Notification email (optional)</label>
+        <input type="email" placeholder="you@example.com"
+          [ngModel]="cfg().notifyEmail" (ngModelChange)="patch({ notifyEmail: $event })" class="${INPUT_CLS}" />
+        <p class="mt-1 text-[11px] text-slate-500">
+          If set, you'll get an email each time someone submits this form. Leave empty to just collect submissions in your inbox.
+        </p>
+      </div>
+
+      <div class="pt-2">
+        <div class="mb-2 flex items-center justify-between">
+          <div class="text-[12px] font-semibold uppercase tracking-wider text-slate-600">Fields</div>
+          <div class="text-[11px] text-slate-400">{{ cfg().fields.length }} / 20</div>
+        </div>
+
+        <div class="space-y-3" cdkDropList (cdkDropListDropped)="onDrop($event)">
+          @for (field of cfg().fields; track field.id; let i = $index) {
+            <div class="rounded-2xl border border-slate-200 bg-slate-50 p-3 space-y-2" cdkDrag [cdkDragData]="i">
+              <div class="flex items-center gap-2">
+                <button type="button" class="cursor-grab rounded-lg p-1 text-slate-400 hover:bg-slate-100 active:cursor-grabbing" cdkDragHandle aria-label="Drag to reorder">
+                  <lucide-angular [img]="GripIcon" class="h-4 w-4" />
+                </button>
+                <div class="flex-1 text-xs font-semibold text-slate-600">Field #{{ i + 1 }}</div>
+                <button type="button" class="rounded-lg p-1 text-slate-400 hover:text-red-600" (click)="remove(i)" [attr.aria-label]="'Remove field ' + (i + 1)">
+                  <lucide-angular [img]="TrashIcon" class="h-4 w-4" />
+                </button>
+              </div>
+              <div class="grid grid-cols-1 gap-2 md:grid-cols-2">
+                <input type="text" placeholder="Label (e.g. Name)"
+                  [ngModel]="field.label" (ngModelChange)="update(i, { label: $event })" class="${INPUT_CLS}" />
+                <select [ngModel]="field.type" (ngModelChange)="update(i, { type: $event, options: $event === 'select' ? (field.options.length ? field.options : ['Option 1']) : [] })" class="${INPUT_CLS}">
+                  <option value="text">Short text</option>
+                  <option value="email">Email</option>
+                  <option value="tel">Phone</option>
+                  <option value="textarea">Long text</option>
+                  <option value="select">Dropdown</option>
+                  <option value="checkbox">Checkbox</option>
+                </select>
+              </div>
+              @if (field.type !== 'checkbox') {
+                <input type="text" placeholder="Placeholder (optional)"
+                  [ngModel]="field.placeholder" (ngModelChange)="update(i, { placeholder: $event })" class="${INPUT_CLS}" />
+              }
+              @if (field.type === 'select') {
+                <div class="space-y-1.5">
+                  <label class="${LABEL_CLS}">Options (one per line)</label>
+                  <textarea rows="3" placeholder="Option 1&#10;Option 2&#10;Option 3"
+                    [ngModel]="optionsAsText(field)"
+                    (ngModelChange)="update(i, { options: parseOptions($event) })"
+                    class="${INPUT_CLS}"></textarea>
+                </div>
+              }
+              <label class="flex items-center gap-2 pt-1 text-xs text-slate-600">
+                <input type="checkbox"
+                  [ngModel]="field.required"
+                  (ngModelChange)="update(i, { required: $event })"
+                  class="h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900" />
+                Required
+              </label>
+            </div>
+          }
+          <button type="button"
+            class="flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-slate-300 py-3 text-xs font-semibold text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+            [disabled]="cfg().fields.length >= 20"
+            (click)="add()">
+            <lucide-angular [img]="PlusIcon" class="h-4 w-4" />
+            Add field
+          </button>
+        </div>
+      </div>
+    </div>
+  `
+})
+export class FormEditorComponent {
+  readonly TrashIcon = Trash2;
+  readonly PlusIcon = Plus;
+  readonly GripIcon = GripVertical;
+  cfg = input.required<FormSectionConfig>();
+  cfgChange = output<FormSectionConfig>();
+  patch(p: Partial<FormSectionConfig>) { this.cfgChange.emit({ ...this.cfg(), ...p }); }
+
+  add() {
+    if (this.cfg().fields.length >= 20) return;
+    const next: FormField[] = [
+      ...this.cfg().fields,
+      {
+        id: `fld_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`,
+        type: 'text',
+        label: `Field ${this.cfg().fields.length + 1}`,
+        required: false,
+        placeholder: '',
+        options: []
+      }
+    ];
+    this.patch({ fields: next });
+  }
+  update(i: number, p: Partial<FormField>) {
+    this.patch({ fields: this.cfg().fields.map((f, idx) => (idx === i ? { ...f, ...p } : f)) });
+  }
+  remove(i: number) {
+    this.patch({ fields: this.cfg().fields.filter((_, idx) => idx !== i) });
+  }
+  onDrop(e: CdkDragDrop<number>) {
+    if (e.previousIndex === e.currentIndex) return;
+    const next = [...this.cfg().fields];
+    moveItemInArray(next, e.previousIndex, e.currentIndex);
+    this.patch({ fields: next });
+  }
+  optionsAsText(field: FormField): string {
+    return (field.options ?? []).join('\n');
+  }
+  parseOptions(raw: string): string[] {
+    return raw.split(/\r?\n/).map((x) => x.trim()).filter((x) => x.length > 0).slice(0, 30);
+  }
+
+  castFieldType(v: any): FormFieldType { return v as FormFieldType; }
+}
+
+// ──────────────────────────────────────────────────────────────────────────
 // Dispatcher
 // ──────────────────────────────────────────────────────────────────────────
 /** Dispatches to the right editor component based on section.type. */
@@ -931,7 +1083,8 @@ export class RichTextEditorComponent {
     LogosEditorComponent,
     PromoCardsEditorComponent,
     ValuePropsEditorComponent,
-    RichTextEditorComponent
+    RichTextEditorComponent,
+    FormEditorComponent
   ],
   template: `
     @switch (section().type) {
@@ -949,6 +1102,7 @@ export class RichTextEditorComponent {
       @case ('promoCards')       { <app-promo-cards-editor       [cfg]="anyCfg()" (cfgChange)="emit($event)" /> }
       @case ('valueProps')       { <app-value-props-editor       [cfg]="anyCfg()" (cfgChange)="emit($event)" /> }
       @case ('richText')         { <app-rich-text-editor         [cfg]="anyCfg()" (cfgChange)="emit($event)" /> }
+      @case ('form')             { <app-form-editor              [cfg]="anyCfg()" (cfgChange)="emit($event)" /> }
     }
   `
 })

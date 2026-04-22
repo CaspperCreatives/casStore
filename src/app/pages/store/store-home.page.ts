@@ -14,7 +14,7 @@ import { SectionRendererComponent } from './sections/section-renderer.component'
       <div>
         @for (section of sections(); track section.id) {
           @if (section.visible) {
-            <app-section-renderer [section]="section" [store]="s" />
+            <app-section-renderer [section]="section" [store]="s" [pageId]="pageId()" />
           }
         }
       </div>
@@ -29,6 +29,7 @@ export class StoreHomePage {
 
   store = computed<Store | null>(() => this.storeService.viewingStore() ?? this.storeService.store());
   homePage = signal<StorePage | null>(null);
+  pageId = computed(() => this.homePage()?.id ?? '');
   private loadedStoreId: string | null = null;
 
   sections = computed<StoreSection[]>(() => {

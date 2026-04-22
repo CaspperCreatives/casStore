@@ -8,6 +8,7 @@ import {
   Award,
   ChevronDown,
   ChevronUp,
+  ClipboardList,
   ExternalLink,
   Eye,
   EyeOff,
@@ -42,7 +43,13 @@ import { NavItem, SectionType, StoreSection, StoreService } from '../../core/sto
 import { StorePage, StorePagesService } from '../../core/store-pages.service';
 import { SECTION_TYPE_META, createDefaultSection } from './sections-editor/section-defaults';
 import { SectionEditorComponent } from './sections-editor/section-editors.component';
-import { SECTION_PRESETS, SectionPreset, buildPresetSections } from './sections-editor/section-presets';
+import {
+  PRESET_CATEGORIES,
+  PresetCategory,
+  SECTION_PRESETS,
+  SectionPreset,
+  buildPresetSections
+} from './sections-editor/section-presets';
 import { SectionThumbnailComponent } from './sections-editor/section-thumbnail.component';
 
 const ICON_MAP: Record<string, any> = {
@@ -59,7 +66,8 @@ const ICON_MAP: Record<string, any> = {
   Award,
   LayoutList,
   Sparkle,
-  Type
+  Type,
+  ClipboardList
 };
 
 @Component({
@@ -134,7 +142,7 @@ const ICON_MAP: Record<string, any> = {
           </button>
           <button type="button"
             class="flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-            (click)="showPresets.set(true)">
+            (click)="openPresets()">
             <lucide-angular [img]="WandIcon" class="h-4 w-4" />
             Presets
           </button>
@@ -348,8 +356,29 @@ const ICON_MAP: Record<string, any> = {
               <lucide-angular [img]="XIcon" class="h-5 w-5" />
             </button>
           </div>
-          <div class="grid gap-3 p-4 sm:grid-cols-2">
-            @for (p of presets; track p.id) {
+
+          <!-- Category tabs: each tab maps to a page type so users can
+               assemble a full website one page at a time. -->
+          <div class="flex flex-wrap items-center gap-2 border-b border-slate-200 px-4 py-3">
+            @for (cat of presetCategories; track cat.id) {
+              <button type="button"
+                [class]="'rounded-full border px-3 py-1.5 text-xs font-semibold transition ' + (activePresetCategory() === cat.id ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-200 text-slate-600 hover:bg-slate-50')"
+                [title]="cat.description"
+                (click)="activePresetCategory.set(cat.id)">
+                {{ cat.label }}
+                <span [class]="'ml-1 rounded-full px-1.5 py-0.5 text-[10px] font-bold ' + (activePresetCategory() === cat.id ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500')">
+                  {{ presetCountFor(cat.id) }}
+                </span>
+              </button>
+            }
+          </div>
+
+          <div class="px-5 pb-2 pt-4">
+            <p class="text-[11px] text-slate-500">{{ activePresetCategoryMeta().description }}</p>
+          </div>
+
+          <div class="grid gap-3 px-4 pb-4 sm:grid-cols-2">
+            @for (p of visiblePresets(); track p.id) {
               <button type="button"
                 class="group flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 text-left transition hover:border-slate-900 hover:shadow-sm"
                 (click)="applyPreset(p)">
@@ -363,16 +392,21 @@ const ICON_MAP: Record<string, any> = {
                   </div>
                 </div>
                 <div class="grid grid-cols-2 gap-1.5 rounded-xl border border-slate-100 bg-slate-50 p-2">
-                  @for (t of p.sections; track $index) {
+                  @for (spec of p.sections; track $index) {
                     <div>
-                      <app-section-thumbnail [type]="t" />
+                      <app-section-thumbnail [type]="spec.type" />
                       <div class="mt-1 truncate text-center text-[9px] font-semibold uppercase tracking-wide text-slate-400">
-                        {{ label(t) }}
+                        {{ label(spec.type) }}
                       </div>
                     </div>
                   }
                 </div>
               </button>
+            }
+            @if (visiblePresets().length === 0) {
+              <div class="sm:col-span-2 rounded-2xl border border-dashed border-slate-300 py-10 text-center text-sm text-slate-500">
+                No presets in this category yet.
+              </div>
             }
           </div>
         </div>
@@ -493,6 +527,22 @@ export class MyStorePageEditorPage {
   readonly GalleryIcon = GalleryHorizontalEnd;
 
   readonly presets = SECTION_PRESETS;
+  readonly presetCategories = PRESET_CATEGORIES;
+  activePresetCategory = signal<PresetCategory>('home');
+
+  visiblePresets = computed(() =>
+    SECTION_PRESETS.filter((p) => p.category === this.activePresetCategory())
+  );
+
+  activePresetCategoryMeta = computed(
+    () =>
+      PRESET_CATEGORIES.find((c) => c.id === this.activePresetCategory()) ??
+      PRESET_CATEGORIES[0]
+  );
+
+  presetCountFor(category: PresetCategory): number {
+    return SECTION_PRESETS.reduce((n, p) => (p.category === category ? n + 1 : n), 0);
+  }
 
   private route = inject(ActivatedRoute);
   private router = inject(Router);
@@ -712,6 +762,34 @@ export class MyStorePageEditorPage {
     this.sections.set(buildPresetSections(preset));
     this.expanded.set(null);
     this.showPresets.set(false);
+  }
+
+  openPresets() {
+    this.activePresetCategory.set(this.guessPresetCategory());
+    this.showPresets.set(true);
+  }
+
+  /**
+   * Pick a sensible preset category based on the page we are editing so the
+   * picker opens on the most useful tab. Home pages default to "home",
+   * and custom pages are matched by slug / title keywords.
+   */
+  private guessPresetCategory(): PresetCategory {
+    const p = this.page();
+    if (!p) return 'home';
+    if (p.isHome) return 'home';
+    const needle = `${p.slug} ${p.title}`.toLowerCase();
+    const rules: Array<[RegExp, PresetCategory]> = [
+      [/\b(about|story|team|mission|our-)/, 'about'],
+      [/\b(contact|reach|get-in-touch|support)\b/, 'contact'],
+      [/\b(faq|help|question|policy|policies|shipping|returns?)\b/, 'faq'],
+      [/\b(shop|store|catalog|catalogue|products|collection|sale)\b/, 'shop'],
+      [/\b(launch|campaign|coming-soon|landing|promo)\b/, 'landing']
+    ];
+    for (const [re, cat] of rules) {
+      if (re.test(needle)) return cat;
+    }
+    return 'home';
   }
 
   reset() {

@@ -303,6 +303,17 @@ import { SectionType } from '../../../core/store.service';
           </div>
         }
 
+        @case ('form') {
+          <div class="flex h-full w-full flex-col items-start gap-1.5 bg-white px-6 py-3">
+            <div class="h-2 w-24 rounded bg-slate-800"></div>
+            <div class="h-1 w-32 rounded bg-slate-300"></div>
+            <div class="mt-1 h-3 w-full rounded border border-slate-200 bg-slate-50"></div>
+            <div class="h-3 w-full rounded border border-slate-200 bg-slate-50"></div>
+            <div class="h-6 w-full rounded border border-slate-200 bg-slate-50"></div>
+            <div class="mt-1 h-3 w-16 rounded bg-slate-900"></div>
+          </div>
+        }
+
       }
     </div>
   `
