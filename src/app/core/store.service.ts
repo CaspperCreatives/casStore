@@ -191,6 +191,10 @@ export type NavItem =
 
 export type StoreHomeTarget = 'custom' | 'products';
 
+export type StorePaymentMethods = {
+  cashOnDelivery: boolean;
+};
+
 export type Store = {
   id: string;
   ownerId: string;
@@ -207,10 +211,26 @@ export type Store = {
    * - 'products': redirect to the products listing page.
    */
   homeTarget?: StoreHomeTarget;
+  /**
+   * When false, cart and checkout UI are hidden and the checkout API rejects
+   * new orders. Treat `undefined` as `true` for backwards compatibility.
+   */
+  checkoutEnabled?: boolean;
+  /**
+   * Per-store payment method availability. Only cash-on-delivery is supported
+   * today; `undefined` is treated as `{ cashOnDelivery: true }`.
+   */
+  paymentMethods?: StorePaymentMethods;
   /** @deprecated Sections now live on per-page docs. Kept for legacy fallback. */
   sections?: StoreSection[];
   navItems?: NavItem[];
 };
+
+/** Legacy stores without the flag are treated as enabled to avoid breaking them. */
+export function isStoreCheckoutEnabled(store: { checkoutEnabled?: boolean } | null | undefined): boolean {
+  if (!store) return false;
+  return store.checkoutEnabled !== false;
+}
 
 /** Fallback sections derived from store profile, used when a store has no sections defined. */
 export function buildDefaultSections(store: { name: string; description: string }): StoreSection[] {

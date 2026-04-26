@@ -2,6 +2,11 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { environment } from '../../../environments/environment';
 import { ApiClient } from '../../core/api-client';
+import {
+  STORE_ORDER_STATUS_FILTER_OPTIONS,
+  storeOrderStatusBadgeClass,
+  storeOrderStatusLabel
+} from '../../core/store-orders.service';
 import { LucideAngularModule, ReceiptText } from 'lucide-angular';
 
 type Order = {
@@ -12,8 +17,6 @@ type Order = {
   totalCents: number;
   createdAt?: any;
 };
-
-const STATUSES = ['', 'PENDING_PAYMENT', 'PAID', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED', 'REFUNDED'];
 
 @Component({
   selector: 'app-admin-orders-page',
@@ -29,7 +32,7 @@ const STATUSES = ['', 'PENDING_PAYMENT', 'PAID', 'PROCESSING', 'SHIPPED', 'DELIV
         <select [(ngModel)]="selectedStatus" (ngModelChange)="loadWithStatus($event)"
           class="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 outline-none focus:border-slate-900">
           <option value="">All statuses</option>
-          @for (s of statuses.slice(1); track s) { <option [value]="s">{{ s }}</option> }
+          @for (s of statuses.slice(1); track s) { <option [value]="s">{{ orderStatusLabel(s) }}</option> }
         </select>
       </div>
 
@@ -61,8 +64,8 @@ const STATUSES = ['', 'PENDING_PAYMENT', 'PAID', 'PROCESSING', 'SHIPPED', 'DELIV
                   <td class="hidden px-4 py-3 text-xs text-slate-500 max-w-[150px] truncate md:table-cell">{{ o.userId }}</td>
                   <td class="px-4 py-3 text-right font-semibold text-slate-900">{{ fmtCurrency(o.totalCents, o.currency) }}</td>
                   <td class="px-4 py-3 text-center">
-                    <span class="rounded-full px-2 py-0.5 text-[11px] font-semibold" [class]="statusClass(o.status)">
-                      {{ o.status }}
+                    <span class="rounded-full px-2 py-0.5 text-[11px] font-semibold" [class]="orderStatusBadgeClass(o.status)">
+                      {{ orderStatusLabel(o.status) }}
                     </span>
                   </td>
                   <td class="hidden px-4 py-3 text-right text-xs text-slate-500 sm:table-cell">{{ fmtDate(o.createdAt) }}</td>
@@ -78,13 +81,16 @@ const STATUSES = ['', 'PENDING_PAYMENT', 'PAID', 'PROCESSING', 'SHIPPED', 'DELIV
 export class AdminOrdersPage {
   readonly ReceiptTextIcon = ReceiptText;
 
+  readonly orderStatusLabel = storeOrderStatusLabel;
+  readonly orderStatusBadgeClass = storeOrderStatusBadgeClass;
+
   private api = inject(ApiClient);
   firebaseConfigured = computed(() => Boolean(environment.firebase?.apiKey));
 
   orders = signal<Order[]>([]);
   status = signal<'idle' | 'loading' | 'error'>('idle');
   selectedStatus = '';
-  statuses = STATUSES;
+  statuses = [...STORE_ORDER_STATUS_FILTER_OPTIONS];
 
   constructor() {
     if (this.firebaseConfigured()) void this.load();
@@ -116,16 +122,4 @@ export class AdminOrdersPage {
     return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(d);
   }
 
-  statusClass(s: string) {
-    const map: Record<string, string> = {
-      PENDING_PAYMENT: 'bg-amber-100 text-amber-800',
-      PAID: 'bg-emerald-100 text-emerald-800',
-      PROCESSING: 'bg-blue-100 text-blue-800',
-      SHIPPED: 'bg-indigo-100 text-indigo-800',
-      DELIVERED: 'bg-slate-100 text-slate-700',
-      CANCELLED: 'bg-red-100 text-red-700',
-      REFUNDED: 'bg-orange-100 text-orange-800'
-    };
-    return map[s] ?? 'bg-slate-100 text-slate-600';
-  }
 }

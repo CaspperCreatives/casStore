@@ -38,17 +38,21 @@ export class ApiClient {
     return `https://${region}-${projectId}.cloudfunctions.net`;
   }
 
-  private async headers(opts?: { auth?: boolean }) {
+  private async headers(opts?: { auth?: boolean; headers?: Record<string, string> }) {
     const h: Record<string, string> = { 'Content-Type': 'application/json' };
     if (opts?.auth) {
       const token = await this.auth.getIdToken();
       if (!token) throw new Error('Not signed in');
       h['Authorization'] = `Bearer ${token}`;
     }
+    for (const [key, value] of Object.entries(opts?.headers ?? {})) {
+      if (!value) continue;
+      h[key] = value;
+    }
     return h;
   }
 
-  async get<T>(fn: string, params?: Record<string, string | number | boolean | null | undefined>, opts?: { auth?: boolean }): Promise<T> {
+  async get<T>(fn: string, params?: Record<string, string | number | boolean | null | undefined>, opts?: { auth?: boolean; headers?: Record<string, string> }): Promise<T> {
     const url = new URL(`${this.baseUrl()}/${fn}`);
     for (const [k, v] of Object.entries(params ?? {})) {
       if (v === undefined || v === null) continue;
@@ -60,7 +64,7 @@ export class ApiClient {
     return json as T;
   }
 
-  async post<T>(fn: string, body?: unknown, opts?: { auth?: boolean }): Promise<T> {
+  async post<T>(fn: string, body?: unknown, opts?: { auth?: boolean; headers?: Record<string, string> }): Promise<T> {
     const res = await fetch(`${this.baseUrl()}/${fn}`, {
       method: 'POST',
       headers: await this.headers(opts),
@@ -71,7 +75,7 @@ export class ApiClient {
     return json as T;
   }
 
-  async patch<T>(fn: string, body?: unknown, opts?: { auth?: boolean }): Promise<T> {
+  async patch<T>(fn: string, body?: unknown, opts?: { auth?: boolean; headers?: Record<string, string> }): Promise<T> {
     const res = await fetch(`${this.baseUrl()}/${fn}`, {
       method: 'PATCH',
       headers: await this.headers(opts),
@@ -82,7 +86,7 @@ export class ApiClient {
     return json as T;
   }
 
-  async delete<T>(fn: string, params?: Record<string, string | number | boolean | null | undefined>, opts?: { auth?: boolean }): Promise<T> {
+  async delete<T>(fn: string, params?: Record<string, string | number | boolean | null | undefined>, opts?: { auth?: boolean; headers?: Record<string, string> }): Promise<T> {
     const url = new URL(`${this.baseUrl()}/${fn}`);
     for (const [k, v] of Object.entries(params ?? {})) {
       if (v === undefined || v === null) continue;

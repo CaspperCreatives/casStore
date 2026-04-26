@@ -34,6 +34,7 @@ import {
   ReceiptText,
   Settings,
   Store,
+  Users,
   X
 } from 'lucide-angular';
 
@@ -318,6 +319,7 @@ export class MyStoreShellComponent {
     { path: '/my-store', label: 'Dashboard', icon: LayoutDashboard, exact: true },
     { path: '/my-store/products', label: 'Products', icon: Package, exact: false },
     { path: '/my-store/orders', label: 'Orders', icon: ReceiptText, exact: false },
+    { path: '/my-store/customers', label: 'Customers', icon: Users, exact: false },
     { path: '/my-store/submissions', label: 'Submissions', icon: Inbox, exact: false },
     { path: '/my-store/storefront', label: 'Storefront', icon: Palette, exact: false },
     { path: '/my-store/settings', label: 'Settings', icon: Settings, exact: false }
@@ -371,6 +373,7 @@ export class MyStoreShellComponent {
     const url = this.currentUrl();
     if (url.startsWith('/my-store/products')) return 'Products';
     if (url.startsWith('/my-store/orders')) return 'Orders';
+    if (url.startsWith('/my-store/customers')) return 'Customers';
     if (url.startsWith('/my-store/submissions')) return 'Submissions';
     if (url.startsWith('/my-store/storefront')) return 'Storefront';
     if (url.startsWith('/my-store/settings')) return 'Settings';

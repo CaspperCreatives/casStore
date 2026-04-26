@@ -1,7 +1,12 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { environment } from '../../../environments/environment';
-import { StoreOrdersService, StoreOrder } from '../../core/store-orders.service';
+import {
+  StoreOrdersService,
+  StoreOrder,
+  storeOrderStatusBadgeClass,
+  storeOrderStatusLabel
+} from '../../core/store-orders.service';
 import { LucideAngularModule, Package } from 'lucide-angular';
 
 @Component({
@@ -44,8 +49,8 @@ import { LucideAngularModule, Package } from 'lucide-angular';
                   <div class="mt-1 font-semibold text-slate-900">{{ fmtCurrency(o.totalCents, o.currency) }}</div>
                   <div class="mt-0.5 text-xs text-slate-500">{{ fmtDate(o.createdAt) }}</div>
                 </div>
-                <span class="rounded-full px-3 py-1 text-[11px] font-semibold" [class]="statusClass(o.status)">
-                  {{ o.status }}
+                <span class="rounded-full px-3 py-1 text-[11px] font-semibold" [class]="orderStatusBadgeClass(o.status)">
+                  {{ orderStatusLabel(o.status) }}
                 </span>
               </div>
               @if (o.shippingAddress?.fullName) {
@@ -66,6 +71,9 @@ import { LucideAngularModule, Package } from 'lucide-angular';
 })
 export class AccountOrdersPage {
   readonly PackageIcon = Package;
+
+  readonly orderStatusLabel = storeOrderStatusLabel;
+  readonly orderStatusBadgeClass = storeOrderStatusBadgeClass;
 
   private ordersService = inject(StoreOrdersService);
 
@@ -93,16 +101,4 @@ export class AccountOrdersPage {
     return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(d);
   }
 
-  statusClass(s: string) {
-    const map: Record<string, string> = {
-      PENDING_PAYMENT: 'bg-amber-100 text-amber-800',
-      PAID: 'bg-emerald-100 text-emerald-800',
-      PROCESSING: 'bg-blue-100 text-blue-800',
-      SHIPPED: 'bg-indigo-100 text-indigo-800',
-      DELIVERED: 'bg-slate-100 text-slate-700',
-      CANCELLED: 'bg-red-100 text-red-700',
-      REFUNDED: 'bg-orange-100 text-orange-800'
-    };
-    return map[s] ?? 'bg-slate-100 text-slate-600';
-  }
 }

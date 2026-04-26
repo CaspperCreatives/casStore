@@ -26,6 +26,12 @@ export type StorePageInput = {
 export class StorePagesService {
   private api = inject(ApiClient);
 
+  /**
+   * Public `home` page doc keyed by storeId. StoreShell fills this before the outlet
+   * mounts; StoreHomePage reads it so the first paint matches the loaded config.
+   */
+  readonly publicHomePageByStoreId = signal<Record<string, StorePage | null>>({});
+
   /** Cached list of pages keyed by storeId, exposed as a signal for nav/menus. */
   readonly pagesByStore = signal<Record<string, StorePage[]>>({});
 
@@ -74,5 +80,9 @@ export class StorePagesService {
 
   async setHomePage(pageId: string): Promise<void> {
     await this.api.post(`storePagesSetHome?pageId=${encodeURIComponent(pageId)}`, undefined, { auth: true });
+  }
+
+  setPublicHomePage(storeId: string, page: StorePage | null): void {
+    this.publicHomePageByStoreId.update((m) => ({ ...m, [storeId]: page }));
   }
 }

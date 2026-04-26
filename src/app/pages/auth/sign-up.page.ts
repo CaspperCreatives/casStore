@@ -3,6 +3,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { environment } from '../../../environments/environment';
 import { AuthService } from '../../core/auth.service';
 import { StoreService } from '../../core/store.service';
+import { TENANT_CONTEXT } from '../../core/host-routing';
 import { ArrowRight, Chrome, CircleAlert, LoaderCircle, Lock, LucideAngularModule, Mail, TriangleAlert } from 'lucide-angular';
 
 @Component({
@@ -139,6 +140,7 @@ export class SignUpPage {
   private store = inject(StoreService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
+  private tenant = inject(TENANT_CONTEXT, { optional: true });
 
   firebaseConfigured = computed(() => Boolean(environment.firebase?.apiKey));
   email = signal('');
@@ -168,6 +170,8 @@ export class SignUpPage {
       const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
       if (returnUrl) {
         await this.router.navigateByUrl(returnUrl);
+      } else if (this.tenant) {
+        await this.router.navigateByUrl('/account');
       } else {
         await this.router.navigateByUrl(await this.store.postAuthDestination(this.auth.canAccessAdmin()));
       }
@@ -188,6 +192,8 @@ export class SignUpPage {
       const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
       if (returnUrl) {
         await this.router.navigateByUrl(returnUrl);
+      } else if (this.tenant) {
+        await this.router.navigateByUrl('/account');
       } else {
         await this.router.navigateByUrl(await this.store.postAuthDestination(this.auth.canAccessAdmin()));
       }

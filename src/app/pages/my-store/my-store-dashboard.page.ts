@@ -14,6 +14,7 @@ import {
   TriangleAlert
 } from 'lucide-angular';
 import { ErrorDisplayComponent } from '../../shared/error-display.component';
+import { storeOrderStatusBadgeClass, storeOrderStatusLabel } from '../../core/store-orders.service';
 
 type DashMetrics = {
   totalProducts: number;
@@ -159,8 +160,8 @@ type DashMetrics = {
                 <div class="text-right">
                   <div class="text-sm font-semibold text-slate-900">{{ fmtCurrency(o.totalCents) }}</div>
                   <span class="mt-0.5 inline-block rounded-full px-2 py-0.5 text-[11px] font-semibold"
-                    [class]="statusClass(o.status)">
-                    {{ o.status }}
+                    [class]="orderStatusBadgeClass(o.status)">
+                    {{ orderStatusLabel(o.status) }}
                   </span>
                 </div>
               </div>
@@ -200,6 +201,9 @@ type DashMetrics = {
   `
 })
 export class MyStoreDashboardPage {
+  readonly orderStatusLabel = storeOrderStatusLabel;
+  readonly orderStatusBadgeClass = storeOrderStatusBadgeClass;
+
   readonly TrendingUpIcon = TrendingUp;
   readonly ReceiptTextIcon = ReceiptText;
   readonly PackageIcon = Package;
@@ -286,16 +290,4 @@ export class MyStoreDashboardPage {
     return new Intl.DateTimeFormat(undefined, { day: '2-digit', month: 'short' }).format(d);
   }
 
-  statusClass(status: string) {
-    const map: Record<string, string> = {
-      PENDING_PAYMENT: 'bg-amber-100 text-amber-800',
-      PAID: 'bg-emerald-100 text-emerald-800',
-      PROCESSING: 'bg-blue-100 text-blue-800',
-      SHIPPED: 'bg-indigo-100 text-indigo-800',
-      DELIVERED: 'bg-slate-100 text-slate-700',
-      CANCELLED: 'bg-red-100 text-red-700',
-      REFUNDED: 'bg-orange-100 text-orange-800'
-    };
-    return map[status] ?? 'bg-slate-100 text-slate-600';
-  }
 }

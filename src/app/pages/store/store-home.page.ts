@@ -30,13 +30,14 @@ export class StoreHomePage {
   store = computed<Store | null>(() => this.storeService.viewingStore() ?? this.storeService.store());
   homePage = signal<StorePage | null>(null);
   pageId = computed(() => this.homePage()?.id ?? '');
-  private loadedStoreId: string | null = null;
+  private homeFetchInFlight: string | null = null;
 
   sections = computed<StoreSection[]>(() => {
-    const page = this.homePage();
-    if (page?.sections?.length) return page.sections;
     const s = this.store();
     if (!s) return [];
+    if (s.homeTarget === 'products') return [];
+    const page = this.homePage();
+    if (page?.sections?.length) return page.sections;
     if (s.sections && s.sections.length > 0) return s.sections;
     return buildDefaultSections(s);
   });
@@ -44,6 +45,7 @@ export class StoreHomePage {
   constructor() {
     effect(() => {
       const s = this.store();
+      const homeMap = this.pagesService.publicHomePageByStoreId();
       if (!s) return;
 
       if (s.homeTarget === 'products') {
@@ -51,14 +53,24 @@ export class StoreHomePage {
         return;
       }
 
-      if (this.loadedStoreId === s.id) return;
-      this.loadedStoreId = s.id;
+      if (Object.hasOwn(homeMap, s.id)) {
+        this.homePage.set(homeMap[s.id]!);
+        return;
+      }
+
       void this.loadHome(s.id);
     });
   }
 
   private async loadHome(storeId: string) {
-    const page = await this.pagesService.getPageBySlug({ storeId, slug: 'home' });
-    this.homePage.set(page);
+    if (this.homeFetchInFlight === storeId) return;
+    this.homeFetchInFlight = storeId;
+    try {
+      const page = await this.pagesService.getPageBySlug({ storeId, slug: 'home' });
+      this.homePage.set(page);
+      this.pagesService.setPublicHomePage(storeId, page);
+    } finally {
+      this.homeFetchInFlight = null;
+    }
   }
 }

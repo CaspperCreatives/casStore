@@ -13,7 +13,6 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { Store, StoreService } from '../../core/store.service';
 import { StoreProduct, StoreProductsService } from '../../core/store-products.service';
 import { StoreOrdersService } from '../../core/store-orders.service';
-import { AuthService } from '../../core/auth.service';
 import { StoreRouterService } from '../../core/store-router';
 import { TENANT_CONTEXT } from '../../core/host-routing';
 import {
@@ -78,7 +77,7 @@ import { LucideAngularModule, Package, ShoppingCart } from 'lucide-angular';
                 <span class="font-bold text-slate-900">{{ fmtPrice(p.priceCents, p.currency) }}</span>
                 @if (p.stock <= 0) {
                   <span class="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-500">Out of stock</span>
-                } @else {
+                } @else if (checkoutEnabled()) {
                   <button
                     type="button"
                     class="flex h-8 w-8 items-center justify-center rounded-xl text-slate-600 hover:bg-slate-900 hover:text-white transition-colors"
@@ -109,7 +108,6 @@ export class StoreProductsPage implements OnDestroy {
   private storeService = inject(StoreService);
   private productsService = inject(StoreProductsService);
   private ordersService = inject(StoreOrdersService);
-  private auth = inject(AuthService);
   private storeRouter = inject(StoreRouterService);
   private tenant = inject(TENANT_CONTEXT, { optional: true });
 
@@ -119,6 +117,7 @@ export class StoreProductsPage implements OnDestroy {
   cartMessage = signal<string | null>(null);
 
   productLink = (productId: string) => this.storeRouter.link(['products', productId]);
+  checkoutEnabled = computed(() => this.activeStore()?.checkoutEnabled !== false);
 
   private header = viewChild<ElementRef<HTMLElement>>('header');
   private grid = viewChild<ElementRef<HTMLElement>>('grid');
@@ -178,10 +177,7 @@ export class StoreProductsPage implements OnDestroy {
 
   async addToCart(p: StoreProduct) {
     const store = this.activeStore();
-    if (!store || !this.auth.user()) {
-      this.showMsg('Please sign in to add items to cart');
-      return;
-    }
+    if (!store) return;
     if (p.stock <= 0) return;
     try {
       await this.ordersService.addToCart(store.id, p.id);

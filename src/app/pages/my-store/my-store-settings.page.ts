@@ -1,6 +1,7 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { StoreService } from '../../core/store.service';
+import { UploadService } from '../../core/upload.service';
 import { environment } from '../../../environments/environment';
 import { Copy, ExternalLink, LucideAngularModule, Save } from 'lucide-angular';
 
@@ -131,6 +132,13 @@ import { Copy, ExternalLink, LucideAngularModule, Save } from 'lucide-angular';
               <label class="mb-1.5 block text-[12px] font-semibold uppercase tracking-wider text-slate-600">Logo URL</label>
               <input type="url" [(ngModel)]="logoUrl" placeholder="https://example.com/logo.png"
                 class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-slate-900 focus:bg-white" />
+              <label class="mt-2 block cursor-pointer rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+                Choose logo file (uploads on Save)
+                <input type="file" accept="image/*" class="hidden" (change)="onLogoFile($event)" />
+              </label>
+              @if (logoFileName()) {
+                <p class="mt-1 text-xs text-slate-500">Selected file: {{ logoFileName() }}</p>
+              }
             </div>
           </div>
         </div>
@@ -139,6 +147,34 @@ import { Copy, ExternalLink, LucideAngularModule, Save } from 'lucide-angular';
           <div class="flex items-center gap-3">
             <input type="checkbox" [(ngModel)]="active" id="active" class="h-4 w-4 rounded" />
             <label for="active" class="text-sm font-semibold text-slate-700">Store is active (visible to the public)</label>
+          </div>
+        </div>
+
+        <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+          <h2 class="font-semibold text-slate-900">Checkout</h2>
+          <p class="mt-0.5 text-xs text-slate-500">Control whether buyers can place orders and which payment methods are accepted.</p>
+
+          <div class="mt-4 flex items-start gap-3">
+            <input type="checkbox" [(ngModel)]="checkoutEnabled" id="checkoutEnabled" class="mt-1 h-4 w-4 rounded" />
+            <div>
+              <label for="checkoutEnabled" class="text-sm font-semibold text-slate-700">Enable checkout</label>
+              <p class="mt-0.5 text-xs text-slate-500">Allow customers to add products to their cart and place orders.</p>
+            </div>
+          </div>
+
+          <div class="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+            <div class="text-[12px] font-semibold uppercase tracking-wider text-slate-500">Payment methods</div>
+
+            <div class="mt-3 flex items-start gap-3">
+              <input type="checkbox" [(ngModel)]="cashOnDelivery" id="cashOnDelivery"
+                [disabled]="!checkoutEnabled" class="mt-1 h-4 w-4 rounded" />
+              <div>
+                <label for="cashOnDelivery" class="text-sm font-semibold text-slate-700">Cash on delivery</label>
+                <p class="mt-0.5 text-xs text-slate-500">Buyer pays the courier in cash on arrival. Orders wait for your approval before being processed.</p>
+              </div>
+            </div>
+
+            <p class="mt-3 text-[11px] italic text-slate-400">More payment methods coming soon.</p>
           </div>
         </div>
 
@@ -170,6 +206,7 @@ export class MyStoreSettingsPage {
   readonly ExternalLinkIcon = ExternalLink;
 
   private storeService = inject(StoreService);
+  private uploader = inject(UploadService);
 
   firebaseConfigured = computed(() => Boolean(environment.firebase?.apiKey));
   readonly rootDomain = environment.rootDomain;
@@ -188,7 +225,11 @@ export class MyStoreSettingsPage {
   description = '';
   category = '';
   logoUrl = '';
+  logoFile = signal<File | null>(null);
+  logoFileName = signal('');
   active = true;
+  checkoutEnabled = true;
+  cashOnDelivery = true;
 
   subdomainHost = () => `${(this.slug || 'your-store').toLowerCase()}.${this.rootDomain}`;
   apexHost = () => `${this.rootDomain}/store/${(this.slug || 'your-store').toLowerCase()}`;
@@ -212,6 +253,8 @@ export class MyStoreSettingsPage {
       this.category = store.category;
       this.logoUrl = store.logoUrl ?? '';
       this.active = store.active;
+      this.checkoutEnabled = store.checkoutEnabled !== false;
+      this.cashOnDelivery = store.paymentMethods?.cashOnDelivery !== false;
     }
     this.loading.set(false);
   }
@@ -235,14 +278,25 @@ export class MyStoreSettingsPage {
     this.saveStatus.set('loading');
     this.error.set(null);
     try {
+      let nextLogoUrl = this.logoUrl.trim() || null;
+      const selectedLogo = this.logoFile();
+      if (selectedLogo) {
+        const uploaded = await this.uploader.upload(selectedLogo, 'logos');
+        nextLogoUrl = uploaded.publicUrl;
+      }
       await this.storeService.updateStore({
         name: this.name.trim(),
         slug: this.slug.trim(),
         description: this.description.trim(),
         category: this.category,
-        logoUrl: this.logoUrl.trim() || null,
-        active: this.active
+        logoUrl: nextLogoUrl,
+        active: this.active,
+        checkoutEnabled: this.checkoutEnabled,
+        paymentMethods: { cashOnDelivery: this.cashOnDelivery }
       });
+      if (nextLogoUrl) this.logoUrl = nextLogoUrl;
+      this.logoFile.set(null);
+      this.logoFileName.set('');
       this.originalSlug.set(this.slug.trim().toLowerCase());
       this.saveStatus.set('success');
       setTimeout(() => this.saveStatus.set('idle'), 3000);
@@ -263,5 +317,13 @@ export class MyStoreSettingsPage {
         this.error.set(msg);
       }
     }
+  }
+
+  onLogoFile(e: Event) {
+    const input = e.target as HTMLInputElement;
+    const file = input.files?.[0] ?? null;
+    this.logoFile.set(file);
+    this.logoFileName.set(file?.name ?? '');
+    input.value = '';
   }
 }

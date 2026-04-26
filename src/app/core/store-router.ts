@@ -42,4 +42,15 @@ export class StoreRouterService {
     const slug = this.slug();
     return slug ? ['/store', slug, ...segments] : ['/'];
   }
+
+  /**
+   * Public order tracking (magic link `?t=`). Always uses top-level `/order-status/:slug/:id`
+   * so the page is never rendered inside StoreShellComponent (no store nav / “Create your store”).
+   * Matches buyer email URLs from the API.
+   */
+  orderStatusLink(orderId: string): any[] {
+    const slug = this.tenant?.slug ?? this.storeService.viewingStore()?.slug ?? null;
+    if (!slug) return ['/'];
+    return ['/order-status', slug, orderId];
+  }
 }

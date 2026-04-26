@@ -1,6 +1,5 @@
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { AuthService } from '../../core/auth.service';
 import { Store, StoreService } from '../../core/store.service';
 import { StoreOrdersService } from '../../core/store-orders.service';
 import { StoreRouterService } from '../../core/store-router';
@@ -15,10 +14,15 @@ import { LucideAngularModule, Minus, Plus, Trash2 } from 'lucide-angular';
     <div class="mx-auto max-w-3xl px-6 py-8">
       <h1 class="text-2xl font-bold tracking-tight text-slate-900">Your cart</h1>
 
-      @if (!isSignedIn()) {
-        <div class="mt-6 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-900">
-          <div class="font-semibold">Sign in to view your cart</div>
-          <a routerLink="/sign-in" [queryParams]="{ returnUrl: currentUrl() }" class="mt-2 inline-block text-sm font-semibold text-slate-900 underline">Sign in →</a>
+      @if (!checkoutEnabled()) {
+        <div class="mt-6 rounded-3xl border border-amber-200 bg-amber-50 p-6 text-center">
+          <div class="text-4xl">🛒</div>
+          <h2 class="mt-3 text-lg font-bold text-amber-900">Checkout is currently unavailable</h2>
+          <p class="mt-1 text-sm text-amber-800">This store isn't accepting orders right now. Please check back later.</p>
+          <a [routerLink]="productsLink()"
+            class="mt-4 inline-block rounded-2xl bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-slate-800">
+            Browse products
+          </a>
         </div>
       } @else if (loading()) {
         <div class="mt-6 space-y-3">
@@ -115,7 +119,6 @@ export class StoreCartPage {
   private route = inject(ActivatedRoute);
   private storeService = inject(StoreService);
   private ordersService = inject(StoreOrdersService);
-  private auth = inject(AuthService);
   private storeRouter = inject(StoreRouterService);
   private tenant = inject(TENANT_CONTEXT, { optional: true });
 
@@ -124,20 +127,10 @@ export class StoreCartPage {
   loading = signal(false);
   updatingId = signal<string | null>(null);
   error = signal<string | null>(null);
-  isSignedIn = computed(() => Boolean(this.auth.user()));
 
   productsLink = computed(() => this.storeRouter.link(['products']));
   checkoutLink = computed(() => this.storeRouter.link(['checkout']));
-
-  /**
-   * URL passed as `returnUrl` to the sign-in page. In subdomain mode we want
-   * the user to return to `/cart`; in apex mode to `/store/<slug>/cart`.
-   */
-  currentUrl = computed(() => {
-    if (this.tenant) return '/cart';
-    const slug = this.storeSlug();
-    return `/store/${slug}/cart`;
-  });
+  checkoutEnabled = computed(() => this.activeStore()?.checkoutEnabled !== false);
 
   totalQty = computed(() => this.cartItems().reduce((s, i) => s + i.quantity, 0));
   totalPrice = computed(() => {
@@ -160,7 +153,7 @@ export class StoreCartPage {
 
     effect(() => {
       const store = this.activeStore();
-      if (!store || !this.isSignedIn()) return;
+      if (!store) return;
       if (this.loadedStoreId === store.id) return;
       this.loadedStoreId = store.id;
       void this.loadCart(store.id);

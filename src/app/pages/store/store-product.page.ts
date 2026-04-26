@@ -3,7 +3,6 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { Store, StoreService } from '../../core/store.service';
 import { StoreProduct, StoreProductsService } from '../../core/store-products.service';
 import { StoreOrdersService } from '../../core/store-orders.service';
-import { AuthService } from '../../core/auth.service';
 import { StoreRouterService } from '../../core/store-router';
 import { TENANT_CONTEXT } from '../../core/host-routing';
 import { LucideAngularModule, Minus, Package, Plus, ShoppingCart } from 'lucide-angular';
@@ -65,46 +64,52 @@ import { LucideAngularModule, Minus, Package, Plus, ShoppingCart } from 'lucide-
               <div class="mt-4 text-xs font-semibold text-amber-600">Only {{ product()!.stock }} left in stock</div>
             }
 
-            <!-- Quantity + Add to cart -->
-            <div class="mt-8 flex items-center gap-4 flex-col md:flex-row">
-              <div class="flex items-center rounded-2xl border border-slate-200 bg-slate-50 w-full md:w-auto justify-evenly items-center">
-                <button type="button" class="flex h-10 w-10 items-center justify-center rounded-l-2xl hover:bg-slate-100"
-                  (click)="qty.set(Math.max(1, qty() - 1))">
-                  <lucide-angular [img]="MinusIcon" class="h-4 w-4 text-slate-600" />
-                </button>
-                <span class="min-w-[2.5rem] text-center text-sm font-semibold">{{ qty() }}</span>
-                <button type="button" class="flex h-10 w-10 items-center justify-center rounded-r-2xl hover:bg-slate-100"
-                  (click)="qty.set(Math.min(product()!.stock, qty() + 1))">
-                  <lucide-angular [img]="PlusIcon" class="h-4 w-4 text-slate-600" />
+            @if (checkoutEnabled()) {
+              <!-- Quantity + Add to cart -->
+              <div class="mt-8 flex items-center gap-4 flex-col md:flex-row">
+                <div class="flex items-center rounded-2xl border border-slate-200 bg-slate-50 w-full md:w-auto justify-evenly items-center">
+                  <button type="button" class="flex h-10 w-10 items-center justify-center rounded-l-2xl hover:bg-slate-100"
+                    (click)="qty.set(Math.max(1, qty() - 1))">
+                    <lucide-angular [img]="MinusIcon" class="h-4 w-4 text-slate-600" />
+                  </button>
+                  <span class="min-w-[2.5rem] text-center text-sm font-semibold">{{ qty() }}</span>
+                  <button type="button" class="flex h-10 w-10 items-center justify-center rounded-r-2xl hover:bg-slate-100"
+                    (click)="qty.set(Math.min(product()!.stock, qty() + 1))">
+                    <lucide-angular [img]="PlusIcon" class="h-4 w-4 text-slate-600" />
+                  </button>
+                </div>
+
+                <button
+                  type="button"
+                  class="w-full md:w-auto flex flex-1 items-center justify-center gap-2 rounded-2xl bg-slate-900 px-6 py-3 text-sm font-bold text-white hover:bg-slate-800 disabled:opacity-50 transition-colors"
+                  [disabled]="addingToCart() || product()!.stock <= 0"
+                  (click)="addToCart()"
+                >
+                  <lucide-angular [img]="ShoppingCartIcon" class="h-4 w-4" />
+                  {{ addingToCart() ? 'Adding...' : 'Add to cart' }}
                 </button>
               </div>
 
-              <button
-                type="button"
-                class="w-full md:w-auto flex flex-1 items-center justify-center gap-2 rounded-2xl bg-slate-900 px-6 py-3 text-sm font-bold text-white hover:bg-slate-800 disabled:opacity-50 transition-colors"
-                [disabled]="addingToCart() || product()!.stock <= 0"
-                (click)="addToCart()"
-              >
-                <lucide-angular [img]="ShoppingCartIcon" class="h-4 w-4" />
-                {{ addingToCart() ? 'Adding...' : 'Add to cart' }}
-              </button>
-            </div>
+              @if (cartMessage()) {
+                <div class="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-800">
+                  {{ cartMessage() }}
+                </div>
+              }
+              @if (cartError()) {
+                <div class="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm text-red-800">
+                  {{ cartError() }}
+                </div>
+              }
 
-            @if (cartMessage()) {
-              <div class="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-800">
-                {{ cartMessage() }}
+              <a [routerLink]="cartLink()"
+                class="mt-4 text-center text-sm font-semibold text-slate-600 hover:text-slate-900 hover:underline">
+                View cart →
+              </a>
+            } @else {
+              <div class="mt-8 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                This store is not accepting orders right now.
               </div>
             }
-            @if (cartError()) {
-              <div class="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm text-red-800">
-                {{ cartError() }}
-              </div>
-            }
-
-            <a [routerLink]="cartLink()"
-              class="mt-4 text-center text-sm font-semibold text-slate-600 hover:text-slate-900 hover:underline">
-              View cart →
-            </a>
           </div>
         </div>
       }
@@ -122,7 +127,6 @@ export class StoreProductPage {
   private storeService = inject(StoreService);
   private productsService = inject(StoreProductsService);
   private ordersService = inject(StoreOrdersService);
-  private auth = inject(AuthService);
   private storeRouter = inject(StoreRouterService);
   private tenant = inject(TENANT_CONTEXT, { optional: true });
 
@@ -137,6 +141,7 @@ export class StoreProductPage {
 
   productsLink = computed(() => this.storeRouter.link(['products']));
   cartLink = computed(() => this.storeRouter.link(['cart']));
+  checkoutEnabled = computed(() => this.activeStore()?.checkoutEnabled !== false);
 
   private activeStore = computed<Store | null>(() =>
     this.storeService.viewingStore() ?? this.storeService.store()
@@ -171,10 +176,6 @@ export class StoreProductPage {
     const store = this.activeStore();
     const p = this.product();
     if (!store || !p) return;
-    if (!this.auth.user()) {
-      this.cartError.set('Please sign in to add items to cart.');
-      return;
-    }
     this.addingToCart.set(true);
     this.cartMessage.set(null);
     this.cartError.set(null);

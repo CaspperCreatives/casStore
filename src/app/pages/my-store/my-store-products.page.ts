@@ -2,6 +2,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { StoreService } from '../../core/store.service';
 import { StoreProduct, StoreProductsService } from '../../core/store-products.service';
+import { UploadService } from '../../core/upload.service';
 import { environment } from '../../../environments/environment';
 import { LucideAngularModule, Package, Pencil, Plus, Trash2, TriangleAlert, X } from 'lucide-angular';
 
@@ -20,6 +21,13 @@ const emptyForm = (): ProductForm => ({
   name: '', description: '', imageUrl: '', priceCents: 0,
   currency: 'USD', stock: 0, active: true, category: ''
 });
+
+const CURRENCY_OPTIONS = [
+  'USD', 'EUR', 'GBP', 'CAD', 'AUD',
+  'SAR', 'AED', 'QAR', 'KWD', 'BHD', 'OMR', 'JOD',
+  'EGP', 'MAD', 'TND', 'DZD', 'LYD', 'IQD', 'SYP', 'YER',
+  'LBP', 'SDG', 'SOS', 'MRO', 'DJF', 'KMF'
+] as const;
 
 @Component({
   selector: 'app-my-store-products-page',
@@ -169,7 +177,9 @@ const emptyForm = (): ProductForm => ({
                 <label class="mb-1 block text-[12px] font-semibold uppercase tracking-wider text-slate-600">Currency</label>
                 <select [(ngModel)]="form.currency" name="currency"
                   class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-slate-900 focus:bg-white">
-                  <option>USD</option><option>EUR</option><option>GBP</option><option>CAD</option>
+                  @for (cur of currencyOptions; track cur) {
+                    <option [value]="cur">{{ cur }}</option>
+                  }
                 </select>
               </div>
               <div class="col-span-2">
@@ -177,6 +187,13 @@ const emptyForm = (): ProductForm => ({
                 <input type="url" [(ngModel)]="form.imageUrl" name="imageUrl"
                   placeholder="https://example.com/image.jpg"
                   class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-slate-900 focus:bg-white" />
+                <label class="text-center mt-2 block cursor-pointer rounded-2xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+                  Or Choose image file
+                  <input type="file" accept="image/*" class="hidden" (change)="onImageFile($event)" />
+                </label>
+                @if (imageFileName()) {
+                  <p class="mt-1 text-xs text-slate-500">Selected file: {{ imageFileName() }}</p>
+                }
               </div>
               <div class="col-span-2">
                 <label class="mb-1 block text-[12px] font-semibold uppercase tracking-wider text-slate-600">Description *</label>
@@ -210,9 +227,11 @@ export class MyStoreProductsPage {
   readonly Trash2Icon = Trash2;
   readonly XIcon = X;
   readonly TriangleAlertIcon = TriangleAlert;
+  readonly currencyOptions = CURRENCY_OPTIONS;
 
   private storeService = inject(StoreService);
   private productsService = inject(StoreProductsService);
+  private uploader = inject(UploadService);
 
   firebaseConfigured = computed(() => Boolean(environment.firebase?.apiKey));
   products = this.productsService.products;
@@ -222,6 +241,8 @@ export class MyStoreProductsPage {
 
   showModal = signal(false);
   editingId = signal<string | null>(null);
+  imageFile = signal<File | null>(null);
+  imageFileName = signal('');
   form: ProductForm = emptyForm();
 
   constructor() {
@@ -237,6 +258,7 @@ export class MyStoreProductsPage {
   openCreate() {
     this.form = emptyForm();
     this.editingId.set(null);
+    this.clearImageSelection();
     this.saveError.set(null);
     this.showModal.set(true);
   }
@@ -253,6 +275,7 @@ export class MyStoreProductsPage {
       category: p.category ?? ''
     };
     this.editingId.set(p.id);
+    this.clearImageSelection();
     this.saveError.set(null);
     this.showModal.set(true);
   }
@@ -260,6 +283,7 @@ export class MyStoreProductsPage {
   closeModal() {
     this.showModal.set(false);
     this.editingId.set(null);
+    this.clearImageSelection();
     this.saveError.set(null);
   }
 
@@ -269,9 +293,15 @@ export class MyStoreProductsPage {
     this.saveStatus.set('loading');
     this.saveError.set(null);
     try {
+      let imageUrl = this.form.imageUrl || null;
+      const selectedImage = this.imageFile();
+      if (selectedImage) {
+        const uploaded = await this.uploader.upload(selectedImage, 'products');
+        imageUrl = uploaded.publicUrl;
+      }
       const data = {
         ...this.form,
-        imageUrl: this.form.imageUrl || null,
+        imageUrl,
         priceCents: Number(this.form.priceCents),
         stock: Number(this.form.stock)
       };
@@ -281,12 +311,26 @@ export class MyStoreProductsPage {
       } else {
         await this.productsService.create(storeId, data);
       }
+      if (imageUrl) this.form.imageUrl = imageUrl;
       this.closeModal();
     } catch (e: any) {
       this.saveError.set(e?.message ?? String(e));
     } finally {
       this.saveStatus.set('idle');
     }
+  }
+
+  onImageFile(e: Event) {
+    const input = e.target as HTMLInputElement;
+    const file = input.files?.[0] ?? null;
+    this.imageFile.set(file);
+    this.imageFileName.set(file?.name ?? '');
+    input.value = '';
+  }
+
+  private clearImageSelection() {
+    this.imageFile.set(null);
+    this.imageFileName.set('');
   }
 
   async deleteProduct(p: StoreProduct) {

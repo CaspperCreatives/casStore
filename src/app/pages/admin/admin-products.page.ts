@@ -22,6 +22,13 @@ const emptyForm = (): ProductForm => ({
   currency: 'USD', stock: 0, active: true
 });
 
+const CURRENCY_OPTIONS = [
+  'USD', 'EUR', 'GBP', 'CAD', 'AUD',
+  'SAR', 'AED', 'QAR', 'KWD', 'BHD', 'OMR', 'JOD',
+  'EGP', 'MAD', 'TND', 'DZD', 'LYD', 'IQD', 'SYP', 'YER',
+  'LBP', 'SDG', 'SOS', 'MRO', 'DJF', 'KMF'
+] as const;
+
 @Component({
   selector: 'app-admin-products-page',
   standalone: true,
@@ -123,6 +130,15 @@ const emptyForm = (): ProductForm => ({
                   class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-slate-900 focus:bg-white" />
               </div>
               <div class="col-span-2">
+                <label class="mb-1 block text-[12px] font-semibold uppercase tracking-wider text-slate-600">Currency</label>
+                <select [(ngModel)]="form.currency" name="currency"
+                  class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-slate-900 focus:bg-white">
+                  @for (cur of currencyOptions; track cur) {
+                    <option [value]="cur">{{ cur }}</option>
+                  }
+                </select>
+              </div>
+              <div class="col-span-2">
                 <label class="mb-1 block text-[12px] font-semibold uppercase tracking-wider text-slate-600">Image URL</label>
                 <input type="url" [(ngModel)]="form.imageUrl" name="imageUrl"
                   class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-slate-900 focus:bg-white" />
@@ -155,6 +171,7 @@ export class AdminProductsPage {
   readonly PencilIcon = Pencil;
   readonly Trash2Icon = Trash2;
   readonly XIcon = X;
+  readonly currencyOptions = CURRENCY_OPTIONS;
 
   private api = inject(ApiClient);
   firebaseConfigured = computed(() => Boolean(environment.firebase?.apiKey));

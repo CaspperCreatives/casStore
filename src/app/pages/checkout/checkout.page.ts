@@ -132,13 +132,15 @@ export class CheckoutPage {
   addr = { fullName: '', line1: '', line2: '', city: '', state: '', postalCode: '', country: '' };
   notes = '';
 
-  canSubmit = computed(() =>
-    this.addr.fullName.trim().length > 0 &&
-    this.addr.line1.trim().length > 0 &&
-    this.addr.city.trim().length > 0 &&
-    this.addr.postalCode.trim().length > 0 &&
-    this.addr.country.trim().length > 0
-  );
+  canSubmit(): boolean {
+    return (
+      this.addr.fullName.trim().length > 0 &&
+      this.addr.line1.trim().length > 0 &&
+      this.addr.city.trim().length > 0 &&
+      this.addr.postalCode.trim().length > 0 &&
+      this.addr.country.trim().length > 0
+    );
+  }
 
   async placeOrder() {
     this.status.set('loading');
